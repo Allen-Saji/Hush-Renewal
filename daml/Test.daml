@@ -1,0 +1,157 @@
+module Test where
+
+import Main
+import Daml.Script
+import DA.Date (date, Month(..))
+import DA.Time (time)
+
+test_deal : Script ()
+test_deal = script do
+
+  matcher  <- allocatePartyWithHint "Matcher"  (PartyIdHint "Matcher")
+  customer <- allocatePartyWithHint "Customer" (PartyIdHint "Customer")
+  vendor   <- allocatePartyWithHint "Vendor"   (PartyIdHint "Vendor")
+
+  roundCid <- submit matcher do
+    createCmd RenewalRound with
+      matcher
+      customer
+      vendor
+      roundId      = "ROUND-001"
+      subscription = "Salesforce Enterprise"
+      deadline     = time (date 2026 Jul 2) 0 0 0
+
+  bidCid <- submit customer do
+    createCmd SealedBid with
+      customer
+      matcher
+      roundId  = "ROUND-001"
+      maxPrice = 100000.0
+
+  askCid <- submit vendor do
+    createCmd SealedAsk with
+      vendor
+      matcher
+      roundId  = "ROUND-001"
+      minPrice = 80000.0
+
+  resultCid <- submit matcher do
+    exerciseCmd roundCid Clear with
+      bidCid
+      askCid
+
+  result <- queryContractId matcher resultCid
+  case result of
+    None -> abort "Result contract not found"
+    Some r -> do
+      assertMsg "Expected DEAL" (r.outcome == "DEAL")
+      assertMsg "Expected price of 90000" (r.price == Some 90000.0)
+
+  return ()
+
+test_no_deal : Script ()
+test_no_deal = script do
+
+  matcher  <- allocatePartyWithHint "Matcher"  (PartyIdHint "Matcher")
+  customer <- allocatePartyWithHint "Customer" (PartyIdHint "Customer")
+  vendor   <- allocatePartyWithHint "Vendor"   (PartyIdHint "Vendor")
+
+  roundCid <- submit matcher do
+    createCmd RenewalRound with
+      matcher
+      customer
+      vendor
+      roundId      = "ROUND-002"
+      subscription = "Workday Enterprise"
+      deadline     = time (date 2026 Jul 2) 0 0 0
+
+  bidCid <- submit customer do
+    createCmd SealedBid with
+      customer
+      matcher
+      roundId  = "ROUND-002"
+      maxPrice = 70000.0
+
+  askCid <- submit vendor do
+    createCmd SealedAsk with
+      vendor
+      matcher
+      roundId  = "ROUND-002"
+      minPrice = 90000.0
+
+  resultCid <- submit matcher do
+    exerciseCmd roundCid Clear with
+      bidCid
+      askCid
+
+  result <- queryContractId matcher resultCid
+  case result of
+    None -> abort "Result contract not found"
+    Some r -> do
+      assertMsg "Expected NO_DEAL" (r.outcome == "NO_DEAL")
+      assertMsg "Expected no price revealed" (r.price == None)
+
+  return ()
+
+test_settlement : Script ()
+test_settlement = script do
+
+  matcher  <- allocatePartyWithHint "Matcher"  (PartyIdHint "Matcher")
+  customer <- allocatePartyWithHint "Customer" (PartyIdHint "Customer")
+  vendor   <- allocatePartyWithHint "Vendor"   (PartyIdHint "Vendor")
+
+  roundCid <- submit matcher do
+    createCmd RenewalRound with
+      matcher
+      customer
+      vendor
+      roundId      = "ROUND-003"
+      subscription = "Workday Enterprise"
+      deadline     = time (date 2026 Jul 2) 0 0 0
+
+  bidCid <- submit customer do
+    createCmd SealedBid with
+      customer
+      matcher
+      roundId  = "ROUND-003"
+      maxPrice = 100000.0
+
+  askCid <- submit vendor do
+    createCmd SealedAsk with
+      vendor
+      matcher
+      roundId  = "ROUND-003"
+      minPrice = 80000.0
+
+  resultCid <- submit matcher do
+    exerciseCmd roundCid Clear with
+      bidCid
+      askCid
+
+  cashCid <- submit customer do
+    createCmd Cash with
+      owner   = customer
+      issuer  = customer
+      amount  = 90000.0
+      matcher = matcher
+
+  -- All three parties co-authorize atomic settlement
+  (licenceCid, vendorCashCid) <- submitMulti [matcher, customer, vendor] [] do
+    exerciseCmd resultCid Settle with
+      cashCid
+
+  licence <- queryContractId customer licenceCid
+  case licence of
+    None -> abort "Licence not found"
+    Some l -> do
+      assertMsg "Licence owner should be customer" (l.customer == customer)
+      assertMsg "Licence price should be 90000" (l.price == 90000.0)
+
+  vendorCash <- queryContractId vendor vendorCashCid
+  case vendorCash of
+    None -> abort "Vendor cash not found"
+    Some c -> do
+      assertMsg "Cash owner should be vendor" (c.owner == vendor)
+      assertMsg "Cash amount should be 90000" (c.amount == 90000.0)
+
+  return ()

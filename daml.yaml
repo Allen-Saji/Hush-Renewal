@@ -1,0 +1,11 @@
+sdk-version: 2.10.4
+name: hush-renewal
+source: daml
+version: 0.0.1
+dependencies:
+  - daml-prim
+  - daml-stdlib
+  - daml-script
+test-arguments:
+  files:
+    - daml/Test.daml

@@ -1,0 +1,125 @@
+module Main where
+
+template RenewalRound
+  with
+    matcher      : Party
+    customer     : Party
+    vendor       : Party
+    roundId      : Text
+    subscription : Text
+    deadline     : Time
+  where
+    signatory matcher
+    observer  customer, vendor
+
+    choice Clear : ContractId ClearingResult
+      with
+        bidCid : ContractId SealedBid
+        askCid : ContractId SealedAsk
+      controller matcher
+      do
+        bid <- fetch bidCid
+        ask <- fetch askCid
+        assertMsg "Round ID mismatch on bid" (bid.roundId == roundId)
+        assertMsg "Round ID mismatch on ask" (ask.roundId == roundId)
+        if ask.minPrice <= bid.maxPrice
+          then create ClearingResult with
+                 matcher
+                 customer
+                 vendor
+                 roundId
+                 outcome = "DEAL"
+                 price   = Some ((ask.minPrice + bid.maxPrice) / 2.0)
+          else create ClearingResult with
+                 matcher
+                 customer
+                 vendor
+                 roundId
+                 outcome = "NO_DEAL"
+                 price   = None
+
+template SealedBid
+  with
+    customer  : Party
+    matcher   : Party
+    roundId   : Text
+    maxPrice  : Decimal
+  where
+    signatory customer
+    observer  matcher
+
+template SealedAsk
+  with
+    vendor    : Party
+    matcher   : Party
+    roundId   : Text
+    minPrice  : Decimal
+  where
+    signatory vendor
+    observer  matcher
+
+template ClearingResult
+  with
+    matcher   : Party
+    customer  : Party
+    vendor    : Party
+    roundId   : Text
+    outcome   : Text
+    price     : Optional Decimal
+  where
+    signatory matcher
+    observer  customer, vendor
+
+    -- All three parties co-authorize settlement:
+    -- matcher triggers it, customer approves cash transfer,
+    -- vendor authorizes licence issuance
+    choice Settle : (ContractId RenewedLicense, ContractId Cash)
+      with
+        cashCid : ContractId Cash
+      controller matcher, customer, vendor
+      do
+        assertMsg "Can only settle a DEAL" (outcome == "DEAL")
+        p <- case price of
+               None -> abort "No price on a DEAL result"
+               Some p -> return p
+
+        cash <- fetch cashCid
+        assertMsg "Cash must belong to customer" (cash.owner == customer)
+        assertMsg "Cash amount must match deal price" (cash.amount == p)
+        archive cashCid
+
+        licenceCid <- create RenewedLicense with
+          vendor
+          customer
+          roundId
+          subscription = roundId
+          price        = p
+
+        vendorCashCid <- create Cash with
+          owner   = vendor
+          issuer  = customer
+          amount  = p
+          matcher = matcher
+
+        return (licenceCid, vendorCashCid)
+
+template Cash
+  with
+    owner   : Party
+    issuer  : Party
+    amount  : Decimal
+    matcher : Party
+  where
+    signatory issuer
+    observer  owner, matcher
+
+template RenewedLicense
+  with
+    vendor       : Party
+    customer     : Party
+    roundId      : Text
+    subscription : Text
+    price        : Decimal
+  where
+    signatory vendor
+    observer  customer
