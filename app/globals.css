@@ -1,0 +1,72 @@
+@import "tailwindcss";
+
+/*
+  HushRenewal design tokens (taste-skill dark-institutional).
+  ONE theme: dark, locked at the root. ONE accent: signal-blue (#2f6bf0 scale).
+  Semantic-only: --color-deal / --color-nodeal appear ONLY in mechanism diagrams,
+  never as brand color (color-consistency lock honored).
+  Shape scale: cards rounded-card (16px), buttons rounded-btn (10px), chips full.
+*/
+@theme {
+  --color-bg: #0a0b0d;
+  --color-surface: #101216;
+  --color-surface-2: #15181d;
+  --color-line: #20242c;
+  --color-line-soft: #181b21;
+
+  --color-ink: #f3f5f8;
+  --color-muted: #98a1b0;
+  --color-faint: #646c7a;
+
+  --color-accent: #2f6bf0;
+  --color-accent-hi: #5b8cff;
+  --color-accent-soft: #16203a;
+
+  --color-deal: #34d399;
+  --color-nodeal: #f7706f;
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --radius-card: 16px;
+  --radius-btn: 10px;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background-color: var(--color-bg);
+  color: var(--color-ink);
+}
+
+* {
+  border-color: var(--color-line);
+}
+
+::selection {
+  background: color-mix(in oklab, var(--color-accent) 35%, transparent);
+  color: #ffffff;
+}
+
+/* Reduced-motion: kill transitions and animations globally as a safety net.
+   Component-level guards (useReducedMotion) handle the meaningful cases. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass-fallback {
+    background-color: var(--color-surface) !important;
+    backdrop-filter: none !important;
+  }
+}
