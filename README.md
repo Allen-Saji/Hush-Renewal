@@ -1,55 +1,59 @@
-# HushRenewal landing
+# HushRenewal
 
-Marketing landing page for HushRenewal: private sealed-bid clearing for
-enterprise SaaS renewals on Canton. Both sides submit one sealed reservation
-price, a neutral matcher clears the overlap, and the deal settles atomically.
-Neither party sees the other's number.
+Private sealed-bid clearing for enterprise SaaS renewals, built on Canton.
 
-Built with the taste-skill `design-taste-frontend` ruleset (dark institutional,
-signal-blue accent).
+## The problem
 
-## Stack
+Large enterprises run hundreds of SaaS renewals a year. Enterprise contracts
+are negotiated, not list-priced, and they step up sharply at renewal. The
+negotiation is information-broken: the customer will not reveal its budget
+ceiling (that kills its leverage) and the vendor will not reveal its price
+floor (that kills its margin). So renewals become slow, deadline-driven
+back-and-forth that often settles badly, or auto-rolls into another year at a
+worse rate when a notice window is missed.
 
-- Next.js 15 (App Router, React Server Components)
-- Tailwind v4 (`@theme` tokens in `app/globals.css`)
-- Motion (`motion/react`) for the signature interval-crossing demo and reveals
-- Geist Sans + Geist Mono via `next/font`
-- Phosphor icons (one family, SSR variants in server components)
+## The solution
 
-## Run
+Each side computes a single reservation price in private and submits it sealed
+to a contract on Canton. A neutral matcher clears the overlap:
+
+- If the vendor floor is at or below the customer ceiling, a deal price is
+  produced and settled atomically against payment and the renewed license.
+- Otherwise the result is "no deal" and nothing quantitative is revealed.
+
+Neither party ever sees the other's number. The only thing that leaves the
+round is the outcome.
+
+## Why on a ledger
+
+A trusted middleman could take both numbers too. Putting the mechanism on
+Canton is what makes it trustworthy:
+
+- A shared, tamper-evident outcome instead of trusting one server's word.
+- Matching logic that is auditable, not an opaque black box.
+- Money and the renewed license settle in one transaction, never as two
+  fragile steps.
+- The privacy boundary is enforced by the ledger, not by a policy.
+
+## Repo layout
+
+This is a monorepo.
+
+- `web/` - marketing and demo landing page (Next.js + Tailwind). Walks through
+  the sealed-bid flow and the per-party privacy model.
+- Contract code (Daml) lives alongside it and will be added as the on-ledger
+  clearing and settlement are built out.
+
+## Running the web app
 
 ```bash
+cd web
 npm install
 npm run dev      # http://localhost:3000
-npm run build    # production build (verified green)
+npm run build    # production build
 ```
 
-## Design notes
+## Status
 
-- Dials: `DESIGN_VARIANCE 6 / MOTION_INTENSITY 5 / VISUAL_DENSITY 4`.
-- One theme: dark, locked at the root (`color-scheme: dark`). No section inverts.
-- One accent: signal blue `#2f6bf0` (white-on-accent buttons pass WCAG AA).
-  `--color-deal` / `--color-nodeal` are semantic-only and appear solely inside
-  the mechanism diagrams, never as brand color.
-- Shape scale: cards `rounded-card` (16px), buttons `rounded-btn` (10px),
-  chips full.
-- Zero em-dashes anywhere (plain ASCII hyphens only).
-
-## Section map
-
-`Hero` -> `Trap` (renewal standoff) -> `HowItWorks` (the animated
-interval-crossing demo) -> `ImageBand` -> `PerPartyView` (privacy projection
-toggle) -> `TrustBoundary` (honest claim ledger) -> `Settlement` (atomic DvP) ->
-`WhyOnLedger` (comparison) -> `FinalCTA`.
-
-## Images
-
-Two photographic slots, generated from `IMAGE-PROMPTS.md` and stored as webp in
-`public/`:
-
-- `public/moment.webp` (crossing beams) -> `ImageBand` in `app/page.tsx`.
-- `public/trust.webp` (interlocking machined joint) ->
-  `components/sections/TrustBoundary.tsx`.
-
-All other visuals (hero card, the interval-crossing demo, settlement diagram)
-are real components, not images.
+Built for the Build on Canton hackathon, Track 3 (Payments, Neo Banking and
+Agentic Commerce).
