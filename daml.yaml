@@ -1,4 +1,4 @@
-sdk-version: 2.10.4
+sdk-version: 3.4.11
 name: hush-renewal
 source: daml
 version: 0.0.1

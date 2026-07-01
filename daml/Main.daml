@@ -14,29 +14,30 @@ template RenewalRound
 
     choice Clear : ContractId ClearingResult
       with
-        bidCid : ContractId SealedBid
-        askCid : ContractId SealedAsk
+        bidCid    : ContractId SealedBid
+        askCid    : ContractId SealedAsk
+        dealPrice : Decimal
       controller matcher
       do
+        now <- getTime
+        assertMsg "Round has expired" (now <= deadline)
         bid <- fetch bidCid
         ask <- fetch askCid
-        assertMsg "Round ID mismatch on bid" (bid.roundId == roundId)
-        assertMsg "Round ID mismatch on ask" (ask.roundId == roundId)
+        assertMsg "Bid does not belong to this round"
+          (bid.roundId == roundId && bid.customer == customer && bid.matcher == matcher)
+        assertMsg "Ask does not belong to this round"
+          (ask.roundId == roundId && ask.vendor == vendor && ask.matcher == matcher)
         if ask.minPrice <= bid.maxPrice
-          then create ClearingResult with
-                 matcher
-                 customer
-                 vendor
-                 roundId
-                 outcome = "DEAL"
-                 price   = Some ((ask.minPrice + bid.maxPrice) / 2.0)
-          else create ClearingResult with
-                 matcher
-                 customer
-                 vendor
-                 roundId
-                 outcome = "NO_DEAL"
-                 price   = None
+          then do
+            assertMsg "Deal price must lie within [floor, ceiling]"
+              (ask.minPrice <= dealPrice && dealPrice <= bid.maxPrice)
+            create ClearingResult with
+              matcher; customer; vendor; roundId; subscription
+              outcome = "DEAL"; price = Some dealPrice
+          else
+            create ClearingResult with
+              matcher; customer; vendor; roundId; subscription
+              outcome = "NO_DEAL"; price = None
 
 template SealedBid
   with
@@ -47,6 +48,7 @@ template SealedBid
   where
     signatory customer
     observer  matcher
+    ensure maxPrice > 0.0
 
 template SealedAsk
   with
@@ -57,22 +59,21 @@ template SealedAsk
   where
     signatory vendor
     observer  matcher
+    ensure minPrice > 0.0
 
 template ClearingResult
   with
-    matcher   : Party
-    customer  : Party
-    vendor    : Party
-    roundId   : Text
-    outcome   : Text
-    price     : Optional Decimal
+    matcher      : Party
+    customer     : Party
+    vendor       : Party
+    roundId      : Text
+    subscription : Text
+    outcome      : Text
+    price        : Optional Decimal
   where
     signatory matcher
     observer  customer, vendor
 
-    -- All three parties co-authorize settlement:
-    -- matcher triggers it, customer approves cash transfer,
-    -- vendor authorizes licence issuance
     choice Settle : (ContractId RenewedLicense, ContractId Cash)
       with
         cashCid : ContractId Cash
@@ -80,29 +81,19 @@ template ClearingResult
       do
         assertMsg "Can only settle a DEAL" (outcome == "DEAL")
         p <- case price of
-               None -> abort "No price on a DEAL result"
-               Some p -> return p
-
+               None   -> abort "No price on a DEAL result"
+               Some p -> pure p
         cash <- fetch cashCid
-        assertMsg "Cash must belong to customer" (cash.owner == customer)
-        assertMsg "Cash amount must match deal price" (cash.amount == p)
+        assertMsg "Cash must belong to the customer" (cash.owner == customer)
+        assertMsg "Cash amount must match the deal price" (cash.amount == p)
         archive cashCid
-
         licenceCid <- create RenewedLicense with
-          vendor
-          customer
-          roundId
-          subscription = roundId
-          price        = p
-
+          vendor; customer; roundId; subscription; price = p
         vendorCashCid <- create Cash with
-          owner   = vendor
-          issuer  = customer
-          amount  = p
-          matcher = matcher
+          owner = vendor; issuer = cash.issuer; amount = p; matcher
+        pure (licenceCid, vendorCashCid)
 
-        return (licenceCid, vendorCashCid)
-
+-- Cash: both issuer and owner are signatories so neither can unilaterally destroy it
 template Cash
   with
     owner   : Party
@@ -110,8 +101,9 @@ template Cash
     amount  : Decimal
     matcher : Party
   where
-    signatory issuer
-    observer  owner, matcher
+    signatory issuer, owner
+    observer  matcher
+    ensure amount > 0.0
 
 template RenewedLicense
   with
