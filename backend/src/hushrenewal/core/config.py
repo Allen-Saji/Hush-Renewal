@@ -34,6 +34,11 @@ class Settings(BaseSettings):
     token_refresh_leeway_seconds: int = Field(default=300, alias="TOKEN_REFRESH_LEEWAY_SECONDS")
     default_round_days: int = Field(default=7, alias="DEFAULT_ROUND_DAYS")
 
+    # --- CORS (comma-separated origins; "*" allows any). The demo API carries no
+    # cookies or credentials, so a permissive default is safe; tighten to the
+    # deployed frontend origin in production. ---
+    cors_origins: str = Field(default="*", alias="CORS_ORIGINS")
+
     # --- Persistence (SQLite by default; swap the URL for Postgres) ---
     database_url: str = Field(
         default="sqlite+aiosqlite:///./hushrenewal.db", alias="DATABASE_URL"
@@ -47,6 +52,10 @@ class Settings(BaseSettings):
     matcher_party_hint: str = Field(default="hushrenewal-matcher-1", alias="MATCHER_PARTY_HINT")
     customer_party_hint: str = Field(default="hushrenewal-customer-1", alias="CUSTOMER_PARTY_HINT")
     vendor_party_hint: str = Field(default="hushrenewal-vendor-1", alias="VENDOR_PARTY_HINT")
+
+    @property
+    def cors_origin_list(self) -> list[str]:
+        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
 
     @property
     def matcher(self) -> str:

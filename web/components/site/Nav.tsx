@@ -54,7 +54,7 @@ export function Nav() {
             <Button href="#spec" variant="ghost">
               Read the spec
             </Button>
-            <Button href="#how">See it clear</Button>
+            <Button href="/demo">Live demo</Button>
           </div>
 
           <button
@@ -87,7 +87,7 @@ export function Nav() {
               <Button href="#spec" variant="ghost">
                 Read the spec
               </Button>
-              <Button href="#how">See it clear</Button>
+              <Button href="/demo">Live demo</Button>
             </div>
           </Container>
         </div>

@@ -5,6 +5,7 @@ const cols = [
   {
     title: "Product",
     items: [
+      { label: "Live demo", href: "/demo" },
       { label: "How it works", href: "#how" },
       { label: "Privacy model", href: "#privacy" },
       { label: "Settlement", href: "#settlement" },

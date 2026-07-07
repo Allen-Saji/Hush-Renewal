@@ -46,9 +46,9 @@ export function HeroCopy() {
         variants={item}
         className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center"
       >
-        <Button href="#how">See it clear</Button>
-        <Button href="#spec" variant="ghost">
-          Read the spec
+        <Button href="/demo">Try the live demo</Button>
+        <Button href="#how" variant="ghost">
+          See how it works
         </Button>
       </motion.div>
     </motion.div>
