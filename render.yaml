@@ -1,0 +1,40 @@
+# Render Blueprint -- HushRenewal matcher backend (free web service, Docker).
+#
+# Secrets marked `sync: false` are NOT stored here; paste them once in the
+# Render dashboard (Environment tab). Reuse the values in
+# ~/.config/seaport-devnet.env. The app never persists anything load-bearing:
+# the Canton ledger is the source of truth, so the SQLite file living on
+# ephemeral disk is fine.
+services:
+  - type: web
+    name: hushrenewal-backend
+    runtime: docker
+    plan: free
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      # --- Seaport DevNet credentials (paste in dashboard) ---
+      - key: CANTON_DEVNET_JSON_API_URL
+        sync: false
+      - key: CANTON_DEVNET_WS_URL
+        sync: false
+      - key: CANTON_DEVNET_OIDC_TOKEN_URL
+        sync: false
+      - key: CANTON_DEVNET_OIDC_CLIENT_ID
+        sync: false
+      - key: CANTON_DEVNET_OIDC_CLIENT_SECRET
+        sync: false
+      - key: CANTON_DEVNET_OIDC_AUDIENCE
+        sync: false
+      - key: CANTON_DEVNET_OIDC_SCOPE
+        sync: false
+      # --- Application ---
+      - key: APP_ENV
+        value: prod
+      - key: LOG_JSON
+        value: "true"
+      # Tighten to the deployed frontend origin once its URL is known.
+      - key: CORS_ORIGINS
+        value: "*"

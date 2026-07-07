@@ -8,6 +8,7 @@ from contextlib import asynccontextmanager
 import httpx
 import structlog
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from .api.routes import contracts, customer, health, matcher, rounds, vendor
 from .core.config import get_settings
@@ -67,6 +68,12 @@ def create_app() -> FastAPI:
         version="0.1.0",
         summary="Private SaaS-renewal sealed-bid clearing on Canton.",
         lifespan=lifespan,
+    )
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=get_settings().cors_origin_list,
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
     register_exception_handlers(app)
     for module in (health, matcher, customer, vendor, rounds, contracts):
