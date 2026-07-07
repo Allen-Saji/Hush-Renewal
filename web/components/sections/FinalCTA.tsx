@@ -19,7 +19,7 @@ export function FinalCTA() {
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row lg:col-span-5 lg:justify-end">
-              <Button href="#how">See it clear</Button>
+              <Button href="/demo">Try the live demo</Button>
               <Button href="#trust" variant="ghost">
                 Read the spec
               </Button>
