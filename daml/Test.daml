@@ -182,3 +182,68 @@ test_privacy = script do
   assertMsg "Customer must not see the vendor's sealed ask" (isNone customerSeesAsk)
 
   pure ()
+
+-- Propose/accept settlement: each step is a single-party submit. No actAs of
+-- more than one party anywhere, which is the strict-matcher property in action.
+test_settlement_handshake : Script ()
+test_settlement_handshake = script do
+
+  matcher  <- allocateP "Matcher"
+  customer <- allocateP "Customer"
+  vendor   <- allocateP "Vendor"
+
+  roundCid <- submit matcher do
+    createCmd RenewalRound with
+      matcher; customer; vendor
+      roundId      = "ROUND-004"
+      subscription = "Workday Enterprise"
+      deadline     = time (date 2026 Jul 2) 0 0 0
+
+  bidCid <- submit customer do
+    createCmd SealedBid with
+      customer; matcher
+      roundId  = "ROUND-004"
+      maxPrice = 100000.0
+
+  askCid <- submit vendor do
+    createCmd SealedAsk with
+      vendor; matcher
+      roundId  = "ROUND-004"
+      minPrice = 80000.0
+
+  resultCid <- submit matcher do
+    exerciseCmd roundCid Clear with
+      bidCid; askCid
+      dealPrice = 90000.0
+
+  proposalCid <- submit matcher do
+    exerciseCmd resultCid ProposeSettlement
+
+  cashCid <- submit customer do
+    createCmd Cash with
+      owner   = customer
+      issuer  = customer
+      amount  = 90000.0
+      matcher = matcher
+
+  acceptedCid <- submit customer do
+    exerciseCmd proposalCid AcceptByCustomer with cashCid
+
+  (licenceCid, vendorCashCid) <- submit vendor do
+    exerciseCmd acceptedCid AcceptByVendor
+
+  licence <- queryContractId customer licenceCid
+  case licence of
+    None -> abort "Licence not found"
+    Some l -> do
+      assertMsg "Licence owner should be customer" (l.customer == customer)
+      assertMsg "Licence price should be 90000" (l.price == 90000.0)
+
+  vendorCash <- queryContractId vendor vendorCashCid
+  case vendorCash of
+    None -> abort "Vendor cash not found"
+    Some c -> do
+      assertMsg "Cash owner should be vendor" (c.owner == vendor)
+      assertMsg "Cash amount should be 90000" (c.amount == 90000.0)
+
+  pure ()

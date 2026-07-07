@@ -93,6 +93,80 @@ template ClearingResult
           owner = vendor; issuer = cash.issuer; amount = p; matcher
         pure (licenceCid, vendorCashCid)
 
+    -- Matcher-only entry point to the propose/accept settlement handshake.
+    -- nonconsuming so the cleared result stays on-ledger as an audit record.
+    nonconsuming choice ProposeSettlement : ContractId SettlementProposal
+      controller matcher
+      do
+        assertMsg "Can only settle a DEAL" (outcome == "DEAL")
+        dealPrice <- case price of
+          None   -> abort "No price on a DEAL result"
+          Some p -> pure p
+        create SettlementProposal with
+          matcher; customer; vendor; roundId; subscription; price = dealPrice
+
+-- Settlement handshake: each party authorizes only its own step, and the
+-- atomic delivery-versus-payment fires on the vendor's accept. No single actor
+-- ever needs to sign for more than its own party.
+template SettlementProposal
+  with
+    matcher      : Party
+    customer     : Party
+    vendor       : Party
+    roundId      : Text
+    subscription : Text
+    price        : Decimal
+  where
+    signatory matcher
+    observer  customer, vendor
+
+    -- Customer accepts and names the cash it will pay with.
+    choice AcceptByCustomer : ContractId SettlementCustomerAccepted
+      with
+        cashCid : ContractId Cash
+      controller customer
+      do
+        cash <- fetch cashCid
+        assertMsg "Cash must belong to the customer" (cash.owner == customer)
+        assertMsg "Cash amount must match the deal price" (cash.amount == price)
+        create SettlementCustomerAccepted with
+          matcher; customer; vendor; roundId; subscription; price; cashCid
+
+    choice RejectByCustomer : ()
+      controller customer
+      do pure ()
+
+template SettlementCustomerAccepted
+  with
+    matcher      : Party
+    customer     : Party
+    vendor       : Party
+    roundId      : Text
+    subscription : Text
+    price        : Decimal
+    cashCid      : ContractId Cash
+  where
+    signatory matcher, customer
+    observer  vendor
+
+    -- Vendor accepts -> atomic delivery-versus-payment executes here.
+    choice AcceptByVendor : (ContractId RenewedLicense, ContractId Cash)
+      controller vendor
+      do
+        cash <- fetch cashCid
+        assertMsg "Cash must belong to the customer" (cash.owner == customer)
+        assertMsg "Cash amount must match the deal price" (cash.amount == price)
+        archive cashCid
+        licenceCid <- create RenewedLicense with
+          vendor; customer; roundId; subscription; price
+        vendorCashCid <- create Cash with
+          owner = vendor; issuer = cash.issuer; amount = price; matcher
+        pure (licenceCid, vendorCashCid)
+
+    choice RejectByVendor : ()
+      controller vendor
+      do pure ()
+
 -- Cash: both issuer and owner are signatories so neither can unilaterally destroy it
 template Cash
   with
