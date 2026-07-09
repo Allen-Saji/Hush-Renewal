@@ -39,6 +39,19 @@ class SealResult(BaseModel):
     side: Literal["bid", "ask"]
 
 
+class SettleRequest(BaseModel):
+    round_id: str = Field(min_length=1, max_length=100)
+
+
+class SettleResult(BaseModel):
+    """The agent's authorization of its own settlement leg."""
+
+    role: Role
+    round_id: str
+    rationale: str
+    result: dict[str, Any]
+
+
 class ContextView(BaseModel):
     """What this agent can see -- returned verbatim so the isolation is auditable."""
 

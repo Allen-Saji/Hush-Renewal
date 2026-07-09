@@ -14,16 +14,25 @@ from contextlib import asynccontextmanager
 
 import httpx
 import structlog
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
 from .config import Settings
+from .errors import SettleError
 from .llm import Reasoner
 from .logging import configure_logging
 from .negotiator import Event, Negotiator
-from .schemas import ContextView, HealthResponse, NegotiateRequest, Scenario
+from .schemas import (
+    ContextView,
+    HealthResponse,
+    NegotiateRequest,
+    Scenario,
+    SettleRequest,
+    SettleResult,
+)
 from .sealer import Sealer
+from .settler import Settler
 
 log = structlog.get_logger(__name__)
 
@@ -49,6 +58,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     app.state.http = http
     app.state.negotiator = Negotiator(settings.role, reasoner, sealer)
+    app.state.settler = Settler(settings.role, settings, http)
 
     log.info(
         "agent.startup",
@@ -102,6 +112,20 @@ def create_app(settings: Settings) -> FastAPI:
 
         return StreamingResponse(
             stream(), media_type="text/event-stream", headers=_SSE_HEADERS
+        )
+
+    @app.post("/settle", response_model=SettleResult)
+    async def settle(request: Request, body: SettleRequest) -> SettleResult:
+        settler: Settler = request.app.state.settler
+        try:
+            result = await settler.settle(body.round_id)
+        except SettleError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
+        return SettleResult(
+            role=settings.role,
+            round_id=body.round_id,
+            rationale=settler.rationale,
+            result=result,
         )
 
     return app

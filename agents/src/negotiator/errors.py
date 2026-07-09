@@ -13,3 +13,7 @@ class ReasoningError(NegotiationError):
 
 class SealError(NegotiationError):
     """Submitting the sealed number to the matcher backend failed."""
+
+
+class SettleError(NegotiationError):
+    """Authorizing this party's settlement leg on the matcher backend failed."""
