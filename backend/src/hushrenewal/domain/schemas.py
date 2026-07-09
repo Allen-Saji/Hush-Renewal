@@ -61,6 +61,28 @@ class SettlementResponse(BaseModel):
     vendor_cash_contract_id: str
 
 
+class PeekResult(BaseModel):
+    """Result of the vendor attempting to read the customer's sealed bid."""
+
+    round_id: str
+    bid_exists: bool
+    bid_contract_id: str | None = None
+    vendor_can_see_bid: bool
+    vendor_visible_templates: list[str]
+    verdict: str  # "denied" | "leaked"
+
+
+class ForceBadSettlementResult(BaseModel):
+    """Result of deliberately settling with a mismatched cash amount."""
+
+    round_id: str
+    deal_price: Decimal
+    escrowed_amount: Decimal
+    reverted: bool
+    ledger_error: str | None = None
+    note: str
+
+
 class ContractView(BaseModel):
     template: str
     contract_id: str

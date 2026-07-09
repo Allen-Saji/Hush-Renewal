@@ -9,6 +9,7 @@ from fastapi import Request
 
 from ..core.config import Settings
 from ..db.repository import RoundRepository
+from ..domain.adversarial import AdversarialService
 from ..domain.matcher import MatcherService
 from ..domain.parties import CustomerService, VendorService
 from ..ledger.client import LedgerClient
@@ -36,3 +37,7 @@ def get_customer_service(request: Request) -> CustomerService:
 
 def get_vendor_service(request: Request) -> VendorService:
     return request.app.state.vendor_service  # type: ignore[no-any-return]
+
+
+def get_adversarial_service(request: Request) -> AdversarialService:
+    return request.app.state.adversarial_service  # type: ignore[no-any-return]
