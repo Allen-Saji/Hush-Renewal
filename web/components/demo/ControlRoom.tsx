@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowClockwise,
+  Brain,
   CheckCircle,
   Lightning,
   WarningCircle,
@@ -14,22 +15,29 @@ import {
   type Round,
   type Settlement,
 } from "@/lib/api";
-import { Cid, Dot } from "./ui";
-import { MatcherPanel, SealedPricePanel } from "./Panels";
+import { type Scenario } from "@/lib/agents";
+import { Dot } from "./ui";
+import { MatcherPanel } from "./Panels";
+import { AgentNegotiation, type AgentHandle } from "./AgentNegotiation";
 import { SettlementBand } from "./SettlementBand";
 import { LedgerProjection } from "./LedgerProjection";
+import { AdversarialProbes } from "./AdversarialProbes";
 
 type Conn = "checking" | "ok" | "down";
 
-const STEPS = ["Open round", "Seal prices", "Clear", "Settle"] as const;
+const STEPS = ["Open round", "Agents negotiate", "Clear", "Settle"] as const;
+
+const SCENARIOS: { id: Scenario; label: string; hint: string }[] = [
+  { id: "deal", label: "Overlap", hint: "briefs that should clear a deal" },
+  { id: "no_deal", label: "No overlap", hint: "floor above ceiling -> no deal" },
+];
 
 export function ControlRoom() {
-  const [subscription, setSubscription] = useState("Workday Enterprise");
+  const [subscription, setSubscription] = useState("Workday Enterprise HR Suite");
   const [round, setRound] = useState<Round | null>(null);
-  const [ceiling, setCeiling] = useState("");
-  const [floor, setFloor] = useState("");
-  const [bidSealed, setBidSealed] = useState(false);
-  const [askSealed, setAskSealed] = useState(false);
+  const [scenario, setScenario] = useState<Scenario>("deal");
+  const [sealedCount, setSealedCount] = useState(0);
+  const [running, setRunning] = useState(false);
   const [clearing, setClearing] = useState<Clearing | null>(null);
   const [proposed, setProposed] = useState(false);
   const [customerAccepted, setCustomerAccepted] = useState<CustomerAccept | null>(
@@ -43,6 +51,9 @@ export function ControlRoom() {
 
   const [conn, setConn] = useState<Conn>("checking");
   const [ledgerEnd, setLedgerEnd] = useState<number | null>(null);
+
+  const customerRef = useRef<AgentHandle | null>(null);
+  const vendorRef = useRef<AgentHandle | null>(null);
 
   useEffect(() => {
     let ignore = false;
@@ -74,14 +85,27 @@ export function ControlRoom() {
     }
   }
 
-  const bothSealed = bidSealed && askSealed;
+  const bothSealed = sealedCount >= 2;
+  const scenarioLocked = running || sealedCount > 0 || !!clearing;
+
+  async function runNegotiation() {
+    if (!round) return;
+    setRunning(true);
+    setError(null);
+    setSealedCount(0);
+    try {
+      await Promise.all([customerRef.current?.run(), vendorRef.current?.run()]);
+      setRefreshKey((k) => k + 1);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "An agent could not negotiate");
+    } finally {
+      setRunning(false);
+    }
+  }
 
   function reset() {
     setRound(null);
-    setCeiling("");
-    setFloor("");
-    setBidSealed(false);
-    setAskSealed(false);
+    setSealedCount(0);
     setClearing(null);
     setProposed(false);
     setCustomerAccepted(null);
@@ -90,19 +114,10 @@ export function ControlRoom() {
     setRefreshKey((k) => k + 1);
   }
 
-  const stage = !round
-    ? 0
-    : !bothSealed
-      ? 1
-      : !clearing
-        ? 2
-        : 3;
-
   function stepState(i: number): "done" | "active" | "pending" {
     if (i === 0) return round ? "done" : "active";
     if (i === 1) return bothSealed ? "done" : round ? "active" : "pending";
     if (i === 2) return clearing ? "done" : bothSealed ? "active" : "pending";
-    // Settle
     if (settled) return "done";
     if (clearing?.outcome === "DEAL") return "active";
     return "pending";
@@ -120,13 +135,8 @@ export function ControlRoom() {
             <div className="mt-1 truncate text-lg font-semibold text-ink">
               {round.subscription}
             </div>
-            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-faint">
-              <span>
-                id <span className="font-mono text-muted">{round.round_id}</span>
-              </span>
-              <span>
-                contract <Cid value={round.contract_id} />
-              </span>
+            <div className="mt-1 text-xs text-faint">
+              id <span className="font-mono text-muted">{round.round_id}</span>
             </div>
           </div>
         ) : (
@@ -207,29 +217,36 @@ export function ControlRoom() {
         })}
       </ol>
 
-      {/* Quick-fill scenarios */}
+      {/* Scenario + run bar */}
       {round && !bothSealed && (
-        <div className="flex flex-wrap items-center gap-2 text-xs">
-          <span className="text-faint">Quick fill:</span>
+        <div className="flex flex-col gap-3 rounded-card border border-line bg-surface px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-faint">Scenario:</span>
+            {SCENARIOS.map((sc) => (
+              <button
+                key={sc.id}
+                type="button"
+                disabled={scenarioLocked}
+                onClick={() => setScenario(sc.id)}
+                title={sc.hint}
+                className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                  scenario === sc.id
+                    ? "border-accent/50 bg-accent-soft text-ink"
+                    : "border-line text-muted hover:border-faint hover:text-ink"
+                }`}
+              >
+                {sc.label}
+              </button>
+            ))}
+          </div>
           <button
             type="button"
-            onClick={() => {
-              if (!bidSealed) setCeiling("100000");
-              if (!askSealed) setFloor("80000");
-            }}
-            className="rounded-full border border-line px-3 py-1 text-muted transition-colors hover:border-faint hover:text-ink"
+            onClick={runNegotiation}
+            disabled={running || conn === "down"}
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-btn bg-accent px-5 text-sm font-medium text-white transition-all hover:-translate-y-px hover:shadow-[0_10px_30px_-10px_rgba(47,107,240,0.55)] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Deal (ceiling 100k / floor 80k)
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              if (!bidSealed) setCeiling("70000");
-              if (!askSealed) setFloor("90000");
-            }}
-            className="rounded-full border border-line px-3 py-1 text-muted transition-colors hover:border-faint hover:text-ink"
-          >
-            No deal (ceiling 70k / floor 90k)
+            <Brain size={16} weight="bold" />
+            {running ? "Agents negotiating..." : "Run the negotiation"}
           </button>
         </div>
       )}
@@ -242,51 +259,37 @@ export function ControlRoom() {
         </div>
       )}
 
-      {/* Party panels */}
-      <div className="grid gap-4 lg:grid-cols-3">
-        <SealedPricePanel
-          side="customer"
-          roundOpen={!!round}
-          sealed={bidSealed}
-          value={ceiling}
-          onChange={setCeiling}
-          busy={busy === "bid"}
-          onSubmit={() =>
-            run("bid", async () => {
-              if (!round) return;
-              await api.submitBid(round.round_id, ceiling);
-              setBidSealed(true);
-            })
-          }
+      {/* Agent panels */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <AgentNegotiation
+          ref={customerRef}
+          role="customer"
+          scenario={scenario}
+          roundId={round?.round_id ?? null}
+          onSealed={() => setSealedCount((c) => c + 1)}
         />
-        <MatcherPanel
-          bothSealed={bothSealed}
-          clearing={clearing}
-          busy={busy === "clear"}
-          onClear={() =>
-            run("clear", async () => {
-              if (!round) return;
-              const c = await api.clear(round.round_id);
-              setClearing(c);
-            })
-          }
-        />
-        <SealedPricePanel
-          side="vendor"
-          roundOpen={!!round}
-          sealed={askSealed}
-          value={floor}
-          onChange={setFloor}
-          busy={busy === "ask"}
-          onSubmit={() =>
-            run("ask", async () => {
-              if (!round) return;
-              await api.submitAsk(round.round_id, floor);
-              setAskSealed(true);
-            })
-          }
+        <AgentNegotiation
+          ref={vendorRef}
+          role="vendor"
+          scenario={scenario}
+          roundId={round?.round_id ?? null}
+          onSealed={() => setSealedCount((c) => c + 1)}
         />
       </div>
+
+      {/* Matcher clears */}
+      <MatcherPanel
+        bothSealed={bothSealed}
+        clearing={clearing}
+        busy={busy === "clear"}
+        onClear={() =>
+          run("clear", async () => {
+            if (!round) return;
+            const c = await api.clear(round.round_id);
+            setClearing(c);
+          })
+        }
+      />
 
       {/* Settlement (only on a DEAL) */}
       {clearing?.outcome === "DEAL" && (
@@ -330,6 +333,15 @@ export function ControlRoom() {
 
       {/* Live privacy proof */}
       <LedgerProjection roundId={round?.round_id ?? null} refreshKey={refreshKey} />
+
+      {/* Adversarial probes -- available once both sides have sealed */}
+      {round && bothSealed && (
+        <AdversarialProbes
+          roundId={round.round_id}
+          canForceFail={clearing?.outcome === "DEAL"}
+          onChange={() => setRefreshKey((k) => k + 1)}
+        />
+      )}
     </div>
   );
 }

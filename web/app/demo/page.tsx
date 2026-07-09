@@ -35,19 +35,21 @@ export default function DemoPage() {
               Live on Canton DevNet
             </span>
             <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
-              The clearing room
+              Watch two agents negotiate
             </h1>
             <p className="mt-4 text-lg leading-relaxed text-muted">
-              Run a real renewal round end to end. The customer and vendor each
-              seal one private reservation price; the matcher clears the overlap
-              at a random in-band price and settles atomically. Every step is a
-              live transaction on the Seaport 5n-sandbox validator.
+              Two autonomous agents negotiate a renewal in private. Each reasons
+              over only its own brief, seals a single reservation price on Canton,
+              and never sees the other&apos;s number. The matcher clears the
+              overlap at a random in-band price and settles atomically -- every
+              step a live transaction on the Seaport 5n-sandbox validator.
             </p>
             <p className="mt-3 text-sm leading-relaxed text-faint">
-              One screen drives all three parties so you can see the whole
-              mechanism. In production each party is a separate participant with
-              its own credentials -- but as the panel below proves, the ledger
-              already keeps each side blind to the other&apos;s number.
+              The customer and vendor agents run as separate services with
+              separate context. Expand &ldquo;what this agent can see&rdquo; to
+              confirm neither holds a single field from the other side, and use
+              the adversarial probes to watch a peek get denied and a mismatched
+              settlement revert -- live, from the ledger.
             </p>
           </div>
 
