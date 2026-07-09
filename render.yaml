@@ -38,3 +38,56 @@ services:
       # Tighten to the deployed frontend origin once its URL is known.
       - key: CORS_ORIGINS
         value: "*"
+
+  # --- Customer negotiation agent (isolated LLM service) ---
+  # Same image as the vendor agent; AGENT_ROLE picks the role. Reasons over ONLY
+  # the customer brief, seals its reservation price via the backend, and streams
+  # its reasoning to the frontend. Needs a Groq key and the backend URL.
+  - type: web
+    name: hushrenewal-customer-agent
+    runtime: docker
+    plan: free
+    dockerfilePath: ./agents/Dockerfile
+    dockerContext: ./agents
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: AGENT_ROLE
+        value: customer
+      - key: APP_ENV
+        value: prod
+      - key: LOG_JSON
+        value: "true"
+      # Shared Groq key (paste in dashboard). Isolation is the brief + creds on
+      # Canton, not the LLM provider key.
+      - key: GROQ_API_KEY
+        sync: false
+      # The backend's own onrender URL, e.g. https://hushrenewal-backend.onrender.com
+      - key: BACKEND_URL
+        sync: false
+      # Tighten to the deployed frontend origin once its URL is known.
+      - key: CORS_ORIGINS
+        value: "*"
+
+  # --- Vendor negotiation agent (isolated LLM service) ---
+  - type: web
+    name: hushrenewal-vendor-agent
+    runtime: docker
+    plan: free
+    dockerfilePath: ./agents/Dockerfile
+    dockerContext: ./agents
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: AGENT_ROLE
+        value: vendor
+      - key: APP_ENV
+        value: prod
+      - key: LOG_JSON
+        value: "true"
+      - key: GROQ_API_KEY
+        sync: false
+      - key: BACKEND_URL
+        sync: false
+      - key: CORS_ORIGINS
+        value: "*"

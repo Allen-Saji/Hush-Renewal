@@ -2,11 +2,13 @@ name: keep-warm
 
 # Render free web services idle out after ~15 min without inbound traffic, then
 # cold-start (~30-60s) on the next request. A lightweight ping every 10 minutes
-# keeps the backend awake so judges never hit a spin-up.
+# keeps all three services (backend + both agents) awake so a live demo or the
+# judges never hit a spin-up.
 #
-# After deploying, set a repository variable BACKEND_URL to the Render URL
-# (Settings -> Secrets and variables -> Actions -> Variables). Until then this
-# job is a no-op.
+# After deploying, set three repository variables to the Render URLs
+# (Settings -> Secrets and variables -> Actions -> Variables):
+#   BACKEND_URL, CUSTOMER_AGENT_URL, VENDOR_AGENT_URL
+# Any that are unset are skipped, so this stays a no-op until you deploy.
 
 on:
   schedule:
@@ -17,11 +19,17 @@ jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping /health
+      - name: Ping /health on all services
+        env:
+          BACKEND_URL: ${{ vars.BACKEND_URL }}
+          CUSTOMER_AGENT_URL: ${{ vars.CUSTOMER_AGENT_URL }}
+          VENDOR_AGENT_URL: ${{ vars.VENDOR_AGENT_URL }}
         run: |
-          URL="${{ vars.BACKEND_URL }}"
-          if [ -z "$URL" ]; then
-            echo "BACKEND_URL not set; skipping keep-warm ping."
-            exit 0
-          fi
-          curl -fsS --max-time 60 "${URL%/}/health" && echo " -- warm"
+          for URL in "$BACKEND_URL" "$CUSTOMER_AGENT_URL" "$VENDOR_AGENT_URL"; do
+            if [ -z "$URL" ]; then
+              echo "(unset URL; skipping)"
+              continue
+            fi
+            echo "Pinging ${URL%/}/health"
+            curl -fsS --max-time 60 "${URL%/}/health" && echo " -- warm"
+          done
