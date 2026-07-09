@@ -17,7 +17,7 @@ import {
   type Round,
   type Settlement,
 } from "@/lib/api";
-import { type Scenario } from "@/lib/agents";
+import { settle as agentSettle, type Scenario } from "@/lib/agents";
 import { Dot } from "./ui";
 import { MatcherPanel } from "./Panels";
 import { AgentNegotiation, type AgentHandle } from "./AgentNegotiation";
@@ -59,18 +59,25 @@ export function ControlRoom() {
 
   useEffect(() => {
     let ignore = false;
-    api
-      .health()
-      .then((h) => {
-        if (ignore) return;
-        setConn("ok");
-        setLedgerEnd(h.ledger_end);
-      })
-      .catch(() => {
-        if (!ignore) setConn("down");
-      });
+    // Poll health so a transient DevNet blip self-heals instead of bricking the
+    // demo until a reload.
+    const check = () => {
+      api
+        .health()
+        .then((h) => {
+          if (ignore) return;
+          setConn("ok");
+          setLedgerEnd(h.ledger_end);
+        })
+        .catch(() => {
+          if (!ignore) setConn("down");
+        });
+    };
+    check();
+    const id = setInterval(check, 15000);
     return () => {
       ignore = true;
+      clearInterval(id);
     };
   }, []);
 
@@ -104,6 +111,45 @@ export function ControlRoom() {
       setError(e instanceof Error ? e.message : "An agent could not negotiate");
     } finally {
       setRunning(false);
+    }
+  }
+
+  // Agent-driven settlement: the matcher (neutral service) proposes, then each
+  // agent authorizes its OWN leg through its own service. No human clicks a
+  // party's accept button.
+  async function runSettlement() {
+    if (!round) return;
+    setBusy("settle");
+    setError(null);
+    try {
+      await api.propose(round.round_id);
+      setProposed(true);
+      toast.success("Matcher proposed the settlement");
+
+      const c = await agentSettle("customer", round.round_id);
+      setCustomerAccepted({
+        accepted_contract_id: c.result.accepted_contract_id,
+        cash_contract_id: c.result.cash_contract_id,
+      });
+      toast.success("Customer agent authorized + escrowed cash", {
+        description: c.rationale,
+      });
+
+      const v = await agentSettle("vendor", round.round_id);
+      setSettled({
+        license_contract_id: v.result.license_contract_id,
+        vendor_cash_contract_id: v.result.vendor_cash_contract_id,
+      });
+      toast.success("Vendor agent settled atomically on Canton", {
+        description: v.rationale,
+      });
+      setRefreshKey((k) => k + 1);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Settlement failed";
+      setError(msg);
+      toast.error("Settlement failed", { description: msg });
+    } finally {
+      setBusy(null);
     }
   }
 
@@ -176,7 +222,7 @@ export function ControlRoom() {
                     toast.success("Round opened", { description: r.round_id });
                   })
                 }
-                disabled={busy === "open" || conn === "down"}
+                disabled={busy === "open"}
                 className="inline-flex h-[42px] shrink-0 items-center justify-center gap-2 rounded-btn bg-accent px-4 text-sm font-medium text-white transition-all hover:-translate-y-px hover:shadow-[0_10px_30px_-10px_rgba(47,107,240,0.55)] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Lightning size={15} weight="bold" />
@@ -260,7 +306,7 @@ export function ControlRoom() {
           <button
             type="button"
             onClick={runNegotiation}
-            disabled={running || conn === "down"}
+            disabled={running}
             className="inline-flex h-10 items-center justify-center gap-2 rounded-btn bg-accent px-5 text-sm font-medium text-white transition-all hover:-translate-y-px hover:shadow-[0_10px_30px_-10px_rgba(47,107,240,0.55)] disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Brain size={16} weight="bold" />
@@ -318,40 +364,15 @@ export function ControlRoom() {
         }
       />
 
-      {/* Settlement (only on a DEAL) */}
+      {/* Settlement (only on a DEAL) -- driven by the agents */}
       {clearing?.outcome === "DEAL" && (
         <SettlementBand
           price={clearing.price}
           proposed={proposed}
           customerAccepted={customerAccepted}
           settled={settled}
-          busy={busy}
-          onPropose={() =>
-            run("propose", async () => {
-              if (!round) return;
-              await api.propose(round.round_id);
-              setProposed(true);
-              toast.success("Settlement proposed");
-            })
-          }
-          onCustomerAccept={() =>
-            run("customerAccept", async () => {
-              if (!round) return;
-              const a = await api.customerAccept(round.round_id);
-              setCustomerAccepted(a);
-              toast.success("Customer accepted + escrowed cash");
-            })
-          }
-          onVendorAccept={() =>
-            run("vendorAccept", async () => {
-              if (!round) return;
-              const s = await api.vendorAccept(round.round_id);
-              setSettled(s);
-              toast.success("Settled atomically on Canton", {
-                description: "License issued, payment delivered, in one transaction",
-              });
-            })
-          }
+          busy={busy === "settle"}
+          onSettle={runSettlement}
         />
       )}
 

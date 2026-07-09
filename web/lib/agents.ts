@@ -43,6 +43,30 @@ export type AgentEvent =
   | { name: "done"; data: { reservation_price: string; contract_id: string } }
   | { name: "error"; data: { message: string } };
 
+export type AgentSettleResult = {
+  role: AgentRole;
+  round_id: string;
+  rationale: string;
+  result: Record<string, string>;
+};
+
+/** Ask an agent to authorize its own settlement leg (customer accept / vendor accept). */
+export async function settle(
+  role: AgentRole,
+  roundId: string,
+): Promise<AgentSettleResult> {
+  const resp = await fetch(`${agentBase(role)}/settle`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ round_id: roundId }),
+  });
+  if (!resp.ok) {
+    const detail = await resp.text().catch(() => "");
+    throw new Error(`Agent ${role} settlement failed (${resp.status}) ${detail}`.trim());
+  }
+  return (await resp.json()) as AgentSettleResult;
+}
+
 export async function fetchAgentContext(
   role: AgentRole,
   scenario: Scenario,

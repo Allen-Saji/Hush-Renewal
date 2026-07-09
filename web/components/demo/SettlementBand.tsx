@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle, Handshake } from "@phosphor-icons/react";
+import { Brain, CheckCircle, Handshake } from "@phosphor-icons/react";
 import { type CustomerAccept, type Settlement } from "@/lib/api";
 import { Cid, Money, Pill } from "./ui";
 
@@ -12,9 +12,6 @@ function StepCard({
   title,
   body,
   state,
-  busy,
-  onRun,
-  cta,
   children,
 }: {
   index: number;
@@ -22,9 +19,6 @@ function StepCard({
   title: string;
   body: string;
   state: StepState;
-  busy: boolean;
-  onRun?: () => void;
-  cta: string;
   children?: React.ReactNode;
 }) {
   return (
@@ -58,17 +52,6 @@ function StepCard({
       <p className="mt-1 text-xs leading-relaxed text-muted">{body}</p>
 
       {children}
-
-      {state === "active" && onRun && (
-        <button
-          type="button"
-          onClick={onRun}
-          disabled={busy}
-          className="mt-3 inline-flex h-9 w-full items-center justify-center rounded-btn bg-accent px-3 text-sm font-medium text-white transition-all hover:-translate-y-px hover:shadow-[0_10px_30px_-10px_rgba(47,107,240,0.55)] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-none"
-        >
-          {busy ? "Working..." : cta}
-        </button>
-      )}
     </div>
   );
 }
@@ -79,20 +62,16 @@ export function SettlementBand({
   customerAccepted,
   settled,
   busy,
-  onPropose,
-  onCustomerAccept,
-  onVendorAccept,
+  onSettle,
 }: {
   price: string | null;
   proposed: boolean;
   customerAccepted: CustomerAccept | null;
   settled: Settlement | null;
-  busy: string | null;
-  onPropose: () => void;
-  onCustomerAccept: () => void;
-  onVendorAccept: () => void;
+  busy: boolean;
+  onSettle: () => void;
 }) {
-  const step1: StepState = proposed ? "done" : "active";
+  const step1: StepState = proposed ? "done" : busy ? "active" : "pending";
   const step2: StepState = customerAccepted
     ? "done"
     : proposed
@@ -111,9 +90,10 @@ export function SettlementBand({
           <Handshake size={18} weight="bold" className="text-accent" />
           <h3 className="text-sm font-semibold text-ink">Atomic settlement</h3>
         </div>
-        <p className="text-xs text-muted">
-          Each party authorizes only its own step. Delivery and payment execute
-          together on the vendor&apos;s accept -- or not at all.
+        <p className="max-w-md text-xs text-muted">
+          The matcher proposes; then each agent authorizes only its own leg.
+          Delivery and payment execute together on the vendor agent&apos;s accept
+          -- or not at all.
         </p>
       </div>
 
@@ -122,11 +102,8 @@ export function SettlementBand({
           index={1}
           actor="Matcher"
           title="Propose settlement"
-          body="Turns the cleared result into a settlement proposal at the agreed price."
+          body="The neutral matcher turns the cleared result into a settlement proposal at the agreed price."
           state={step1}
-          busy={busy === "propose"}
-          onRun={onPropose}
-          cta="Propose settlement"
         >
           {price && (
             <div className="mt-2 text-xs text-muted">
@@ -137,13 +114,10 @@ export function SettlementBand({
 
         <StepCard
           index={2}
-          actor="Customer"
-          title="Accept + escrow cash"
-          body="Customer accepts and locks cash equal to the deal price into the handshake."
+          actor="Customer agent"
+          title="Authorize + escrow cash"
+          body="The customer agent authorizes payment of the cleared price -- guaranteed within its ceiling -- and escrows the cash."
           state={step2}
-          busy={busy === "customerAccept"}
-          onRun={onCustomerAccept}
-          cta="Accept + escrow"
         >
           {customerAccepted && (
             <div className="mt-2 text-xs text-muted">
@@ -154,13 +128,10 @@ export function SettlementBand({
 
         <StepCard
           index={3}
-          actor="Vendor"
-          title="Accept -> atomic DvP"
-          body="Vendor accepts; the license is issued and cash moves to the vendor in one atomic step."
+          actor="Vendor agent"
+          title="Authorize -> atomic DvP"
+          body="The vendor agent accepts; the license is issued and cash moves to the vendor in one atomic step."
           state={step3}
-          busy={busy === "vendorAccept"}
-          onRun={onVendorAccept}
-          cta="Accept + settle"
         >
           {settled && (
             <div className="mt-2 space-y-1 text-xs text-muted">
@@ -175,15 +146,26 @@ export function SettlementBand({
         </StepCard>
       </div>
 
-      {settled && (
+      {settled ? (
         <div className="mt-4 flex items-center gap-2">
           <Pill tone="deal">
             <CheckCircle size={13} weight="fill" /> Settled atomically on Canton
           </Pill>
           <span className="text-xs text-muted">
-            License issued to the customer, payment delivered to the vendor.
+            License issued to the customer, payment delivered to the vendor -- the
+            agents settled it themselves.
           </span>
         </div>
+      ) : (
+        <button
+          type="button"
+          onClick={onSettle}
+          disabled={busy}
+          className="mt-4 inline-flex h-10 items-center justify-center gap-2 rounded-btn bg-accent px-5 text-sm font-medium text-white transition-all hover:-translate-y-px hover:shadow-[0_10px_30px_-10px_rgba(47,107,240,0.55)] disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <Brain size={16} weight="bold" />
+          {busy ? "Agents settling..." : "Let the agents settle"}
+        </button>
       )}
     </section>
   );
