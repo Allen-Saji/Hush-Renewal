@@ -8,8 +8,10 @@ import {
   Lightning,
   WarningCircle,
 } from "@phosphor-icons/react";
+import { Toaster, toast } from "sonner";
 import {
   api,
+  formatMoney,
   type Clearing,
   type CustomerAccept,
   type Round,
@@ -79,7 +81,9 @@ export function ControlRoom() {
       await fn();
       setRefreshKey((k) => k + 1);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Something went wrong");
+      const msg = e instanceof Error ? e.message : "Something went wrong";
+      setError(msg);
+      toast.error("Action failed", { description: msg });
     } finally {
       setBusy(null);
     }
@@ -125,6 +129,19 @@ export function ControlRoom() {
 
   return (
     <div className="space-y-5">
+      <Toaster
+        theme="dark"
+        position="bottom-right"
+        closeButton
+        toastOptions={{
+          style: {
+            background: "var(--color-surface)",
+            border: "1px solid var(--color-line)",
+            color: "var(--color-ink)",
+          },
+        }}
+      />
+
       {/* Round bar */}
       <div className="flex flex-col gap-4 rounded-card border border-line bg-surface p-5 sm:flex-row sm:items-center sm:justify-between">
         {round ? (
@@ -156,6 +173,7 @@ export function ControlRoom() {
                   run("open", async () => {
                     const r = await api.openRound(subscription.trim() || "Renewal");
                     setRound(r);
+                    toast.success("Round opened", { description: r.round_id });
                   })
                 }
                 disabled={busy === "open" || conn === "down"}
@@ -287,6 +305,15 @@ export function ControlRoom() {
             if (!round) return;
             const c = await api.clear(round.round_id);
             setClearing(c);
+            if (c.outcome === "DEAL") {
+              toast.success("Cleared: DEAL", {
+                description: `${formatMoney(c.price)}, drawn at random inside the band`,
+              });
+            } else {
+              toast("Cleared: no deal", {
+                description: "Floor sat above ceiling. No price is revealed.",
+              });
+            }
           })
         }
       />
@@ -304,6 +331,7 @@ export function ControlRoom() {
               if (!round) return;
               await api.propose(round.round_id);
               setProposed(true);
+              toast.success("Settlement proposed");
             })
           }
           onCustomerAccept={() =>
@@ -311,6 +339,7 @@ export function ControlRoom() {
               if (!round) return;
               const a = await api.customerAccept(round.round_id);
               setCustomerAccepted(a);
+              toast.success("Customer accepted + escrowed cash");
             })
           }
           onVendorAccept={() =>
@@ -318,6 +347,9 @@ export function ControlRoom() {
               if (!round) return;
               const s = await api.vendorAccept(round.round_id);
               setSettled(s);
+              toast.success("Settled atomically on Canton", {
+                description: "License issued, payment delivered, in one transaction",
+              });
             })
           }
         />

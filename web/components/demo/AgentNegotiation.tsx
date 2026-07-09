@@ -17,6 +17,7 @@ import {
   Storefront,
   WarningCircle,
 } from "@phosphor-icons/react";
+import { toast } from "sonner";
 import { MaskBars } from "@/components/ui/MaskBars";
 import {
   fetchAgentContext,
@@ -130,9 +131,13 @@ export const AgentNegotiation = forwardRef<
             setSealedCid(ev.data.contract_id);
             setPhase("sealed");
             onSealed(ev.data.contract_id);
+            toast.success(`${meta.label} sealed`, {
+              description: `${role === "customer" ? "Ceiling" : "Floor"} committed and sealed on Canton`,
+            });
           } else if (ev.name === "error") {
             setError(ev.data.message);
             setPhase("error");
+            toast.error(`${meta.label} failed`, { description: ev.data.message });
           }
         }
       } catch (e) {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import {
   CheckCircle,
   Eye,
@@ -33,9 +34,21 @@ export function AdversarialProbes({
     setBusy("peek");
     setError(null);
     try {
-      setPeek(await api.peek(roundId));
+      const res = await api.peek(roundId);
+      setPeek(res);
+      if (res.verdict === "denied") {
+        toast.success("Peek denied by privacy", {
+          description: "The bid exists, but the vendor cannot see it",
+        });
+      } else {
+        toast.error("Bid leaked", {
+          description: "The vendor could see the customer's ceiling",
+        });
+      }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Peek failed to run");
+      const msg = e instanceof Error ? e.message : "Peek failed to run";
+      setError(msg);
+      toast.error("Peek failed", { description: msg });
     } finally {
       setBusy(null);
     }
@@ -45,10 +58,22 @@ export function AdversarialProbes({
     setBusy("force");
     setError(null);
     try {
-      setForce(await api.forceBadSettlement(roundId));
+      const res = await api.forceBadSettlement(roundId);
+      setForce(res);
       onChange();
+      if (res.reverted) {
+        toast.success("Mismatched settlement reverted", {
+          description: "No paid-but-not-renewed state was created",
+        });
+      } else {
+        toast.error("Mismatched settlement went through", {
+          description: "The ledger did not reject it",
+        });
+      }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Force-fail could not run");
+      const msg = e instanceof Error ? e.message : "Force-fail could not run";
+      setError(msg);
+      toast.error("Force-fail could not run", { description: msg });
     } finally {
       setBusy(null);
     }
