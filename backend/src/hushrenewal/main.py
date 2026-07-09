@@ -10,12 +10,21 @@ import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .api.routes import contracts, customer, health, matcher, rounds, vendor
+from .api.routes import (
+    adversarial,
+    contracts,
+    customer,
+    health,
+    matcher,
+    rounds,
+    vendor,
+)
 from .core.config import get_settings
 from .core.exceptions import register_exception_handlers
 from .core.logging import configure_logging
 from .db.base import create_engine, create_sessionmaker, init_models
 from .db.repository import RoundRepository
+from .domain.adversarial import AdversarialService
 from .domain.agents import PartyAgent
 from .domain.matcher import MatcherService
 from .domain.parties import CustomerService, VendorService
@@ -49,9 +58,14 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.ledger = ledger
     app.state.engine = engine
     app.state.rounds = rounds_repo
-    app.state.matcher_service = MatcherService(matcher_agent, rounds_repo, settings)
-    app.state.customer_service = CustomerService(customer_agent, settings)
+    matcher_service = MatcherService(matcher_agent, rounds_repo, settings)
+    customer_service = CustomerService(customer_agent, settings)
+    app.state.matcher_service = matcher_service
+    app.state.customer_service = customer_service
     app.state.vendor_service = VendorService(vendor_agent, settings)
+    app.state.adversarial_service = AdversarialService(
+        matcher_agent, vendor_agent, matcher_service, customer_service, settings
+    )
 
     log.info("app.startup", env=settings.app_env, matcher=settings.matcher)
     try:
@@ -76,7 +90,7 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
     register_exception_handlers(app)
-    for module in (health, matcher, customer, vendor, rounds, contracts):
+    for module in (health, matcher, customer, vendor, rounds, contracts, adversarial):
         app.include_router(module.router)
     return app
 

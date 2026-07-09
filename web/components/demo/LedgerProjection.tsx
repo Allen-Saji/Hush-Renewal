@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { CheckCircle, Eye, WarningOctagon } from "@phosphor-icons/react";
-import { api, formatMoney, type ContractView, type Role } from "@/lib/api";
+import { API_BASE, api, formatMoney, type ContractView, type Role } from "@/lib/api";
 import { Cid } from "./ui";
 
 const roles: { id: Role; label: string }[] = [
@@ -28,6 +28,8 @@ const note: Record<Role, string> = {
 const MONEY_KEYS = new Set(["price", "amount", "maxPrice", "minPrice"]);
 const SHOW_KEYS = ["subscription", "outcome", "maxPrice", "minPrice", "price", "amount"];
 
+type View = "cards" | "raw";
+
 function fields(payload: Record<string, unknown>) {
   return SHOW_KEYS.filter((k) => payload[k] !== undefined && payload[k] !== null).map(
     (k) => {
@@ -46,6 +48,7 @@ export function LedgerProjection({
   refreshKey: number;
 }) {
   const [role, setRole] = useState<Role>("customer");
+  const [view, setView] = useState<View>("cards");
   const [rows, setRows] = useState<ContractView[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -79,6 +82,8 @@ export function LedgerProjection({
     ? rows.some((r) => JSON.stringify(r.payload).includes(forbidden))
     : false;
 
+  const requestPath = `GET ${API_BASE}/v1/parties/${role}/contracts`;
+
   return (
     <div className="overflow-hidden rounded-card border border-line bg-surface">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-3.5">
@@ -86,22 +91,49 @@ export function LedgerProjection({
           <Eye size={16} weight="bold" className="text-accent" />
           What each party can see on the ledger
         </div>
-        <div className="flex gap-1.5">
-          {roles.map((r) => (
-            <button
-              key={r.id}
-              type="button"
-              onClick={() => setRole(r.id)}
-              className={`rounded-btn border px-3 py-1.5 text-xs font-medium transition-colors ${
-                role === r.id
-                  ? "border-accent/50 bg-accent-soft text-ink"
-                  : "border-line text-muted hover:border-faint hover:text-ink"
-              }`}
-            >
-              {r.label}
-            </button>
-          ))}
+        <div className="flex items-center gap-3">
+          <div className="flex gap-1.5">
+            {roles.map((r) => (
+              <button
+                key={r.id}
+                type="button"
+                onClick={() => setRole(r.id)}
+                className={`rounded-btn border px-3 py-1.5 text-xs font-medium transition-colors ${
+                  role === r.id
+                    ? "border-accent/50 bg-accent-soft text-ink"
+                    : "border-line text-muted hover:border-faint hover:text-ink"
+                }`}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+          <div className="flex overflow-hidden rounded-btn border border-line">
+            {(["cards", "raw"] as View[]).map((v) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setView(v)}
+                className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                  view === v ? "bg-accent-soft text-ink" : "text-muted hover:text-ink"
+                }`}
+              >
+                {v}
+              </button>
+            ))}
+          </div>
         </div>
+      </div>
+
+      {/* Live request line -- this pane reads the chain, not app memory. */}
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-line bg-bg/40 px-5 py-2 font-mono text-xs">
+        <span className="break-all text-accent-hi">{requestPath}</span>
+        <span className="text-faint">
+          -&gt;{" "}
+          {loading
+            ? "reading..."
+            : `${rows.length} contract(s) visible to this party`}
+        </span>
       </div>
 
       {/* Privacy banner */}
@@ -127,7 +159,7 @@ export function LedgerProjection({
               ) : (
                 <>
                   <code className="font-mono text-ink">{forbidden}</code> is absent from
-                  this view. {note[role]}
+                  this raw response. {note[role]}
                 </>
               )}
             </span>
@@ -137,7 +169,7 @@ export function LedgerProjection({
         )}
       </div>
 
-      {/* Contract list */}
+      {/* Body */}
       <div className="min-h-[7rem] p-3">
         {loading && rows.length === 0 ? (
           <div className="px-2 py-6 text-sm text-faint">Reading the ledger...</div>
@@ -151,6 +183,10 @@ export function LedgerProjection({
               ? "No contracts visible to this party for the current round yet."
               : "Open a round to populate the ledger."}
           </div>
+        ) : view === "raw" ? (
+          <pre className="max-h-96 overflow-auto rounded-btn border border-line bg-bg/60 p-3 font-mono text-[0.7rem] leading-relaxed text-muted">
+            {JSON.stringify(rows, null, 2)}
+          </pre>
         ) : (
           <ul className="grid gap-2 sm:grid-cols-2">
             {rows.map((c) => (

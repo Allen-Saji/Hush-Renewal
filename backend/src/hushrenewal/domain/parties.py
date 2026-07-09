@@ -47,9 +47,16 @@ class CustomerService:
         log.info("bid.submitted", round_id=round_id)
         return SubmitResponse(contract_id=contract_id)
 
-    async def accept_settlement(self, round_id: str) -> CustomerAcceptResponse:
+    async def accept_settlement(
+        self, round_id: str, amount_override: Decimal | None = None
+    ) -> CustomerAcceptResponse:
         """Accept the matcher's proposal: escrow cash equal to the deal price,
-        then sign AcceptByCustomer. Acts only as the customer."""
+        then sign AcceptByCustomer. Acts only as the customer.
+
+        `amount_override` escrows a deliberately wrong amount instead of the deal
+        price; the ledger rejects AcceptByCustomer, which the adversarial demo
+        uses to show that a mismatched settlement cannot half-complete.
+        """
         view = await self._customer.active_contracts()
         proposal = find_by_round(view, Template.SETTLEMENT_PROPOSAL, round_id)
         if proposal is None:
@@ -57,12 +64,13 @@ class CustomerService:
                 f"No settlement proposal for round {round_id}", status_code=404
             )
         price = Decimal(str(proposal["payload"]["price"]))
+        escrow = amount_override if amount_override is not None else price
         cash_tx = await self._customer.create(
             Template.CASH,
             {
                 "owner": self._s.customer,
                 "issuer": self._s.customer,
-                "amount": _decimal_str(price),
+                "amount": _decimal_str(escrow),
                 "matcher": self._s.matcher,
             },
         )

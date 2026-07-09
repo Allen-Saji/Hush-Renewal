@@ -46,6 +46,24 @@ export type ContractView = {
   payload: Record<string, unknown>;
 };
 
+export type PeekResult = {
+  round_id: string;
+  bid_exists: boolean;
+  bid_contract_id: string | null;
+  vendor_can_see_bid: boolean;
+  vendor_visible_templates: string[];
+  verdict: "denied" | "leaked";
+};
+
+export type ForceBadSettlementResult = {
+  round_id: string;
+  deal_price: string;
+  escrowed_amount: string;
+  reverted: boolean;
+  ledger_error: string | null;
+  note: string;
+};
+
 export type Health = { status: string; ledger_end: number | null };
 
 export type Role = "customer" | "vendor" | "matcher";
@@ -147,6 +165,15 @@ export const api = {
     }),
 
   contracts: (role: Role) => req<ContractView[]>(`/v1/parties/${role}/contracts`),
+
+  peek: (roundId: string) =>
+    req<PeekResult>(`/v1/adversarial/rounds/${roundId}/peek`, { method: "POST" }),
+
+  forceBadSettlement: (roundId: string) =>
+    req<ForceBadSettlementResult>(
+      `/v1/adversarial/rounds/${roundId}/force-bad-settlement`,
+      { method: "POST" },
+    ),
 };
 
 /** Group a decimal string as currency, e.g. "90466.72" -> "$90,466.72". */
