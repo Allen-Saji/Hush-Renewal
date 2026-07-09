@@ -71,19 +71,22 @@ CUSTOMER_BRIEFS: dict[Scenario, CustomerBrief] = {
         seats_prior=500,
         last_annual_price=Decimal("95000"),
         budget_directive=(
-            "Finance mandated a 15% cut to SaaS spend this cycle. The soft target "
-            "for this renewal is roughly $80,000."
+            "Finance wants a modest saving versus last year's $95,000, targeting "
+            "around $85,000. Renewing above the competitor quote is acceptable "
+            "given the switching pain."
         ),
-        competitor_quote=Decimal("72000"),
-        switching_cost_estimate=Decimal("15000"),
+        competitor_quote=Decimal("74000"),
+        switching_cost_estimate=Decimal("16000"),
         switching_disruption=(
             "Migrating to the competitor means ~2 quarters of HR-team disruption "
-            "and re-integrating payroll and SSO. Painful but survivable."
+            "and re-integrating payroll and SSO. Genuinely painful, so there is "
+            "real value in paying a premium to avoid it."
         ),
         strategic_notes=(
-            "Procurement prefers to renew -- the integrations are built and the "
-            "team knows the tool -- but only at a price that reflects the smaller "
-            "seat count. Headcount is down from 500 to 380."
+            "Procurement strongly prefers to renew -- the integrations are built "
+            "and the team knows the tool -- at a price that reflects the smaller "
+            "seat count (down from 500 to 380). The effective all-in cost of "
+            "switching is around $90,000 the first year."
         ),
     ),
     "no_deal": CustomerBrief(
@@ -117,18 +120,19 @@ VENDOR_BRIEFS: dict[Scenario, VendorBrief] = {
         subscription="Workday Enterprise HR Suite",
         seats=380,
         list_price=Decimal("115000"),
-        annual_cost_to_serve=Decimal("48000"),
+        annual_cost_to_serve=Decimal("44000"),
         margin_floor_pct=40,
         account_notes=(
-            "Flagship reference logo in this vertical. There are churn signals -- "
-            "they have hinted at evaluating a competitor -- and retaining them "
-            "protects both the ARR and the reference value we cite in sales."
+            "Flagship reference logo in this vertical with real churn signals -- "
+            "they have hinted at evaluating a competitor. Retaining them protects "
+            "the ARR and the reference value, so we are willing to discount close "
+            "to our floor to keep them."
         ),
         quota_pressure=(
-            "The rep is behind quota this quarter; closing this renewal now "
-            "materially helps the number."
+            "The rep is well behind quota this quarter; closing this renewal now "
+            "matters a lot, so there is strong incentive to meet the customer."
         ),
-        discount_authority_floor=Decimal("82000"),
+        discount_authority_floor=Decimal("76000"),
     ),
     "no_deal": VendorBrief(
         company="Workday Inc.",
