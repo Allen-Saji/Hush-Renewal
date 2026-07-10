@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import {
   ArrowClockwise,
   Brain,
-  CheckCircle,
   Lightning,
   WarningCircle,
 } from "@phosphor-icons/react";
@@ -19,6 +18,7 @@ import {
 } from "@/lib/api";
 import { settle as agentSettle, type Scenario } from "@/lib/agents";
 import { Dot } from "./ui";
+import { STEPS, StepRail } from "./StepRail";
 import { MatcherPanel } from "./Panels";
 import { AgentNegotiation, type AgentHandle } from "./AgentNegotiation";
 import { SettlementBand } from "./SettlementBand";
@@ -26,8 +26,6 @@ import { LedgerProjection } from "./LedgerProjection";
 import { AdversarialProbes } from "./AdversarialProbes";
 
 type Conn = "checking" | "ok" | "down";
-
-const STEPS = ["Open round", "Agents negotiate", "Clear", "Settle"] as const;
 
 const SCENARIOS: { id: Scenario; label: string; hint: string }[] = [
   { id: "deal", label: "Overlap", hint: "briefs that should clear a deal" },
@@ -252,32 +250,7 @@ export function ControlRoom() {
       </div>
 
       {/* Step rail */}
-      <ol className="flex items-center gap-2 overflow-x-auto rounded-card border border-line bg-surface px-4 py-3 text-sm">
-        {STEPS.map((label, i) => {
-          const s = stepState(i);
-          return (
-            <li key={label} className="flex items-center gap-2 whitespace-nowrap">
-              <span
-                className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[0.7rem] font-medium ${
-                  s === "done"
-                    ? "bg-[color:var(--color-deal)]/15 text-[color:var(--color-deal)]"
-                    : s === "active"
-                      ? "bg-accent text-white"
-                      : "bg-surface-2 text-faint"
-                }`}
-              >
-                {s === "done" ? <CheckCircle size={14} weight="fill" /> : i + 1}
-              </span>
-              <span className={s === "pending" ? "text-faint" : "text-ink"}>
-                {label}
-              </span>
-              {i < STEPS.length - 1 && (
-                <span className="mx-1 h-px w-6 bg-line sm:w-10" />
-              )}
-            </li>
-          );
-        })}
-      </ol>
+      <StepRail states={STEPS.map((_, i) => stepState(i))} />
 
       {/* Scenario + run bar */}
       {round && !bothSealed && (
