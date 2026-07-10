@@ -18,6 +18,7 @@
 <p align="center">
   <a href="https://hushrenewal.allensaji.dev/demo"><b>Live demo</b></a> |
   <a href="https://youtu.be/RnhlsxYg_q4"><b>Demo video</b></a> |
+  <a href="#on-chain-footprint">On-chain footprint</a> |
   <a href="#architecture">Architecture</a> |
   <a href="#privacy-model">Privacy model</a> |
   <a href="#running-locally">Run locally</a>
@@ -90,6 +91,26 @@ against Canton DevNet. Things worth trying:
 
 A faked demo would pass none of these; they run against the live ledger.
 
+## On-chain footprint
+
+This is the deployment everything above runs against. To verify the project
+independently, query the ledger as one of these parties:
+
+| | |
+|---|---|
+| Validator | Seaport 5n-sandbox, Canton DevNet |
+| Package | `0dade8d4eca19b8ce331b6d82d08ae6054f00af0ae893112a4c06c94d7526e18` |
+| Matcher party | `hushrenewal-matcher-1::1220a14ca128063b8dc9d1ebb0bd22633be9f2168500f4dbc1ecaeb1855b14e5acf8` |
+| Customer party | `hushrenewal-customer-1::1220a14c...acf8` (same namespace) |
+| Vendor party | `hushrenewal-vendor-1::1220a14c...acf8` (same namespace) |
+
+**Important for reviewers browsing the Seaport UI:** it logs in as the shared
+org party, which is not a stakeholder on any HushRenewal contract, so by
+Canton's privacy model these contracts are invisible there. That is the
+privacy model working, not an absence of contracts. Query the ledger as one
+of the three parties above (the demo's ledger projection does exactly this)
+and they appear.
+
 ## Architecture
 
 ![HushRenewal architecture](docs/architecture-dark.png)
@@ -131,22 +152,6 @@ Two properties fall out of this:
 The stated trust boundary: the matcher does see both raw numbers. That is
 honest and explicit, the same position a clearing house holds in traditional
 markets. Moving the comparison into ZK or MPC is future work.
-
-## On-chain footprint
-
-| | |
-|---|---|
-| Validator | Seaport 5n-sandbox, Canton DevNet |
-| Package | `0dade8d4eca19b8ce331b6d82d08ae6054f00af0ae893112a4c06c94d7526e18` |
-| Matcher party | `hushrenewal-matcher-1::1220a14ca128063b8dc9d1ebb0bd22633be9f2168500f4dbc1ecaeb1855b14e5acf8` |
-| Customer party | `hushrenewal-customer-1::1220a14c...acf8` (same namespace) |
-| Vendor party | `hushrenewal-vendor-1::1220a14c...acf8` (same namespace) |
-
-Note for reviewers browsing the Seaport UI: it logs in as the shared org
-party, which is not a stakeholder on any HushRenewal contract, so by Canton's
-privacy model these contracts are invisible there. Query the ledger as one of
-the three parties above (the demo's ledger projection does exactly this) and
-they appear.
 
 ## Repository layout
 
