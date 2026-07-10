@@ -234,12 +234,10 @@ export function ControlRoom() {
 
         <div className="flex items-center gap-3">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-2.5 py-1 text-xs text-muted">
-            <Dot tone={conn === "ok" ? "deal" : conn === "down" ? "nodeal" : "neutral"} />
+            <Dot tone={conn === "ok" ? "deal" : "neutral"} />
             {conn === "ok"
               ? `Canton DevNet - offset ${ledgerEnd ?? "?"}`
-              : conn === "down"
-                ? "Backend unreachable"
-                : "Connecting..."}
+              : "Connecting..."}
           </span>
           {round && (
             <button
