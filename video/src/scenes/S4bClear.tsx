@@ -1,4 +1,5 @@
 import { AbsoluteFill, interpolate } from "remotion";
+import { XCircle } from "@phosphor-icons/react";
 import { MatcherPanel } from "@/components/demo/Panels";
 import { StepRail } from "@/components/demo/StepRail";
 import { MaskBars } from "@/components/ui/MaskBars";
@@ -100,6 +101,23 @@ export function S4bClear() {
                 className="absolute h-5 w-5 -translate-x-1/2 rounded-full bg-[color:var(--color-deal)] shadow-[0_0_22px_rgba(52,211,153,0.9)]"
                 style={{ left: `${px}%`, top: 111, opacity: interpolate(draw, [0, 0.15], [0, 1]) }}
               />
+              {/* midpoint, deliberately not used: it would let either side
+                  solve for the other's bound */}
+              {boundsMasked && (
+                <div
+                  className="absolute flex -translate-x-1/2 flex-col items-center gap-1"
+                  style={{ left: "50%", top: 52 }}
+                >
+                  <XCircle
+                    size={22}
+                    weight="fill"
+                    className="text-[color:var(--color-nodeal)]"
+                  />
+                  <span className="text-sm text-faint">
+                    not the midpoint -- that would leak the bounds
+                  </span>
+                </div>
+              )}
               <Bound
                 leftPct={left}
                 label="vendor floor"

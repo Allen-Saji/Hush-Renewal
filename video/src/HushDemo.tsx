@@ -20,7 +20,7 @@ import { S6Close } from "./scenes/S6Close";
 export const SCENE_FRAMES = {
   s1: 409,
   s2: 443,
-  s3: 659,
+  s3: 734,
   s4a: 457,
   s4b: 383,
   s4c: 285,

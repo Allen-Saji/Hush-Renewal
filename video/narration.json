@@ -23,7 +23,7 @@
     {
       "id": "s3",
       "label": "why-canton",
-      "text": "Why Canton? Because privacy is enforced by signatories, not policy. Each sealed price is a Daml contract only its owner and the matcher can even see. Clearing draws a random price inside the overlap, never the midpoint, which would leak both numbers. Settlement is atomic: license and cash move together, or not at all."
+      "text": "Why build on Canton? Privacy is native here: a contract is visible only to its signatories and observers, so a sealed bid does not exist for the counterparty. That is the ledger, not app policy. Transactions are atomic across parties: license and cash move together, each side authorizing its own leg. And our band check runs on chain: out-of-band prices are rejected."
     },
     {
       "id": "s4a",
