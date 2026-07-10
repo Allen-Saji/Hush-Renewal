@@ -10,18 +10,31 @@
 
 <p align="center">
   <a href="https://hushrenewal.allensaji.dev/demo"><img src="https://img.shields.io/badge/demo-live-2f6bf0" alt="Live demo" /></a>
+  <a href="https://youtu.be/RnhlsxYg_q4"><img src="https://img.shields.io/badge/video-2%20min%20demo-e04040" alt="Demo video" /></a>
   <a href="https://hushrenewal.allensaji.dev"><img src="https://img.shields.io/badge/network-Canton%20DevNet-4c7c59" alt="Canton DevNet" /></a>
   <img src="https://img.shields.io/badge/Daml%20SDK-3.4.11-6f5bd0" alt="Daml SDK 3.4.11" />
 </p>
 
 <p align="center">
   <a href="https://hushrenewal.allensaji.dev/demo"><b>Live demo</b></a> |
+  <a href="https://youtu.be/RnhlsxYg_q4"><b>Demo video</b></a> |
   <a href="#architecture">Architecture</a> |
   <a href="#privacy-model">Privacy model</a> |
   <a href="#running-locally">Run locally</a>
 </p>
 
 ---
+
+## Demo video
+
+Two minutes: the problem, why Canton, and a full live round (agents reason
+and seal, random-in-band clearing, atomic settlement, adversarial probes).
+
+<p align="center">
+  <a href="https://youtu.be/RnhlsxYg_q4">
+    <img src="https://img.youtube.com/vi/RnhlsxYg_q4/maxresdefault.jpg" width="720" alt="HushRenewal demo video" />
+  </a>
+</p>
 
 ## The problem
 
