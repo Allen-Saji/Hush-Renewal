@@ -36,8 +36,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# video workspace
-video/node_modules/
-video/out/
-video/public/clips/raw/
-video/public/clips/live-raw.webm
+# video production workspace (local only, not part of the submission repo)
+video/
