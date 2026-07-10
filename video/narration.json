@@ -1,0 +1,54 @@
+{
+  "voice_id": "pNInz6obpgDQGcFmaJgB",
+  "model_id": "eleven_turbo_v2_5",
+  "output_format": "mp3_44100_128",
+  "voice_settings": {
+    "stability": 0.5,
+    "similarity_boost": 0.8,
+    "style": 0.0,
+    "use_speaker_boost": true,
+    "speed": 1.06
+  },
+  "scenes": [
+    {
+      "id": "s1",
+      "label": "problem",
+      "text": "The average company now manages three hundred and five SaaS applications, with prices climbing thirteen percent a year. Every renewal is a standoff: the buyer has a ceiling, the vendor has a floor, and neither will go first."
+    },
+    {
+      "id": "s2",
+      "label": "build",
+      "text": "HushRenewal turns that standoff into a sealed-bid clearing. Two AI agents each read only their own side's private brief, reason to one reservation price, a ceiling for the buyer, a floor for the vendor, and seal that single number on Canton. Only the neutral matcher sees both."
+    },
+    {
+      "id": "s3",
+      "label": "why-canton",
+      "text": "Why Canton? Because privacy here is enforced by signatories, not policy. Each sealed price is a Daml contract that only its owner and the matcher can even see. Clearing draws a random price inside the overlap, never the midpoint, which would leak both numbers. And settlement is atomic: license and cash move together, or not at all."
+    },
+    {
+      "id": "s4a",
+      "label": "open-negotiate",
+      "text": "Here is a real round on Canton DevNet. The matcher opens it, both agents reason in private, this is their actual reasoning, and each seals its number on chain. We can watch both panels; on the ledger, neither side can read the other's."
+    },
+    {
+      "id": "s4b",
+      "label": "clear",
+      "text": "The matcher clears. Floor below ceiling means a deal, at seventy-six thousand eight hundred eighteen, drawn at random inside the overlap. The price is public; the two bounds behind it never are."
+    },
+    {
+      "id": "s4c",
+      "label": "settle",
+      "text": "The agents settle it themselves: the customer authorizes and escrows the cash, the vendor accepts, and the license and payment move in one atomic transaction."
+    },
+    {
+      "id": "s5",
+      "label": "proofs",
+      "text": "Don't take the privacy on faith. The vendor queries the ledger for the customer's bid: denied. Settle at the wrong amount: the ledger reverts both legs. And here is the matcher's own live contract query, straight from the validator."
+    },
+    {
+      "id": "s6",
+      "label": "close",
+      "text": "Real ledger, real privacy, real atomic settlement; only the SaaS briefs and the cash token are synthetic. HushRenewal: sealed-bid renewals, live on Canton."
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+@import "../../web/app/globals.css";
+
+/* Tailwind v4 only auto-scans the current package; the components whose
+   classes we render live in ../web, so register those trees explicitly. */
+@source "../../web/components";
+@source "../../web/lib";
+@source "./";
+
+/* Geist ships via Next's font loader in the web app; Remotion needs plain
+   @font-face. The woff2 files are copied from the geist package. */
+@font-face {
+  font-family: "Geist";
+  font-weight: 400;
+  src: url("../public/fonts/Geist-Regular.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Geist";
+  font-weight: 500;
+  src: url("../public/fonts/Geist-Medium.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Geist";
+  font-weight: 600;
+  src: url("../public/fonts/Geist-SemiBold.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Geist";
+  font-weight: 700;
+  src: url("../public/fonts/Geist-Bold.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Geist Mono";
+  font-weight: 400;
+  src: url("../public/fonts/GeistMono-Regular.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Geist Mono";
+  font-weight: 500;
+  src: url("../public/fonts/GeistMono-Medium.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Geist Mono";
+  font-weight: 600;
+  src: url("../public/fonts/GeistMono-SemiBold.woff2") format("woff2");
+}
+
+:root {
+  --font-geist-sans: "Geist";
+  --font-geist-mono: "Geist Mono";
+}

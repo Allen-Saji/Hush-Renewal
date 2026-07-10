@@ -35,3 +35,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# video workspace
+video/node_modules/
+video/out/
+video/public/clips/raw/
+video/public/clips/live-raw.webm

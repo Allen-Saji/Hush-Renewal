@@ -1,0 +1,27 @@
+{
+  "name": "hushrenewal-video",
+  "private": true,
+  "description": "Remotion demo video for the Canton hackathon submission. Renders the production web components with scripted state; narration synced per scene.",
+  "scripts": {
+    "studio": "remotion studio",
+    "render": "bash scripts/render.sh",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@phosphor-icons/react": "2.1.10",
+    "@remotion/cli": "4.0.451",
+    "@remotion/tailwind-v4": "4.0.451",
+    "motion": "11.18.2",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "remotion": "4.0.451",
+    "sonner": "2.0.7",
+    "tailwindcss": "4.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "typescript": "5.9.3"
+  }
+}
