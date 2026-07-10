@@ -58,6 +58,15 @@ class Settings(BaseSettings):
     http_timeout_seconds: float = Field(default=60.0, alias="HTTP_TIMEOUT_SECONDS")
     cors_origins: str = Field(default="*", alias="CORS_ORIGINS")
 
+    # --- Keep-warm (Render free tier idles after 15 min without inbound traffic;
+    # a self-ping through the public URL counts as inbound and prevents the
+    # 30-60s cold start. RENDER_EXTERNAL_URL is injected by Render, so this is a
+    # no-op locally. Set KEEP_WARM=0 to stop burning free instance hours once
+    # judging is over.) ---
+    keep_warm: bool = Field(default=True, alias="KEEP_WARM")
+    keep_warm_interval_seconds: float = Field(default=600.0, alias="KEEP_WARM_INTERVAL_SECONDS")
+    external_url: str | None = Field(default=None, alias="RENDER_EXTERNAL_URL")
+
     @model_validator(mode="after")
     def _require_a_key(self) -> Settings:
         if self.resolved_groq_key is None:

@@ -34,6 +34,15 @@ class Settings(BaseSettings):
     token_refresh_leeway_seconds: int = Field(default=300, alias="TOKEN_REFRESH_LEEWAY_SECONDS")
     default_round_days: int = Field(default=7, alias="DEFAULT_ROUND_DAYS")
 
+    # --- Keep-warm (Render free tier idles after 15 min without inbound traffic;
+    # a self-ping through the public URL counts as inbound and prevents the
+    # 30-60s cold start. RENDER_EXTERNAL_URL is injected by Render, so this is a
+    # no-op locally. Set KEEP_WARM=0 to stop burning free instance hours once
+    # judging is over.) ---
+    keep_warm: bool = Field(default=True, alias="KEEP_WARM")
+    keep_warm_interval_seconds: float = Field(default=600.0, alias="KEEP_WARM_INTERVAL_SECONDS")
+    external_url: str | None = Field(default=None, alias="RENDER_EXTERNAL_URL")
+
     # --- CORS (comma-separated origins; "*" allows any). The demo API carries no
     # cookies or credentials, so a permissive default is safe; tighten to the
     # deployed frontend origin in production. ---

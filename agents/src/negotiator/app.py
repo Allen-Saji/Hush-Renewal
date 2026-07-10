@@ -8,9 +8,10 @@ The role is fixed at process start. Endpoints:
 
 from __future__ import annotations
 
+import asyncio
 import json
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 
 import httpx
 import structlog
@@ -47,6 +48,16 @@ def _sse(event: Event) -> str:
     return f"event: {event.name}\ndata: {json.dumps(event.data)}\n\n"
 
 
+async def _keep_warm_loop(http: httpx.AsyncClient, base_url: str, interval: float) -> None:
+    target = f"{base_url.rstrip('/')}/health"
+    while True:
+        await asyncio.sleep(interval)
+        try:
+            await http.get(target)
+        except httpx.HTTPError as exc:
+            log.warning("keepwarm.ping_failed", target=target, error=str(exc))
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings: Settings = app.state.settings
@@ -60,6 +71,17 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.negotiator = Negotiator(settings.role, reasoner, sealer)
     app.state.settler = Settler(settings.role, settings, http)
 
+    keep_warm_task: asyncio.Task[None] | None = None
+    if settings.keep_warm and settings.external_url:
+        keep_warm_task = asyncio.create_task(
+            _keep_warm_loop(http, settings.external_url, settings.keep_warm_interval_seconds)
+        )
+        log.info(
+            "keepwarm.enabled",
+            url=settings.external_url,
+            interval_seconds=settings.keep_warm_interval_seconds,
+        )
+
     log.info(
         "agent.startup",
         role=settings.role,
@@ -69,6 +91,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     try:
         yield
     finally:
+        if keep_warm_task is not None:
+            keep_warm_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await keep_warm_task
         await http.aclose()
         log.info("agent.shutdown", role=settings.role)
 

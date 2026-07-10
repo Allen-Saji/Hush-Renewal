@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 
 import httpx
 import structlog
@@ -32,6 +33,16 @@ from .ledger.auth import OIDCTokenManager
 from .ledger.client import LedgerClient
 
 log = structlog.get_logger(__name__)
+
+
+async def _keep_warm_loop(http: httpx.AsyncClient, base_url: str, interval: float) -> None:
+    target = f"{base_url.rstrip('/')}/health"
+    while True:
+        await asyncio.sleep(interval)
+        try:
+            await http.get(target)
+        except httpx.HTTPError as exc:
+            log.warning("keepwarm.ping_failed", target=target, error=str(exc))
 
 
 @asynccontextmanager
@@ -67,10 +78,25 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         matcher_agent, vendor_agent, matcher_service, customer_service, settings
     )
 
+    keep_warm_task: asyncio.Task[None] | None = None
+    if settings.keep_warm and settings.external_url:
+        keep_warm_task = asyncio.create_task(
+            _keep_warm_loop(http, settings.external_url, settings.keep_warm_interval_seconds)
+        )
+        log.info(
+            "keepwarm.enabled",
+            url=settings.external_url,
+            interval_seconds=settings.keep_warm_interval_seconds,
+        )
+
     log.info("app.startup", env=settings.app_env, matcher=settings.matcher)
     try:
         yield
     finally:
+        if keep_warm_task is not None:
+            keep_warm_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await keep_warm_task
         await http.aclose()
         await engine.dispose()
         log.info("app.shutdown")
