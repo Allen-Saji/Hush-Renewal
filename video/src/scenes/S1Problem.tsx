@@ -53,7 +53,7 @@ export function S1Problem() {
       </div>
 
       {/* The standoff: ceiling vs floor, both hidden */}
-      <Appear at={7.6} className="mt-12">
+      <Appear at={7.0} className="mt-12">
         <div className="rounded-card border border-line bg-surface px-10 py-8">
           <div className="flex items-center justify-between gap-10">
             <div>
@@ -65,7 +65,7 @@ export function S1Problem() {
                 <MaskBars tone="ink" />
               </div>
             </div>
-            <Appear at={9.6} from="none">
+            <Appear at={11.2} from="none">
               <div className="flex flex-col items-center gap-1 text-faint">
                 <ArrowsVertical size={30} weight="bold" />
                 <span className="text-base">neither will go first</span>

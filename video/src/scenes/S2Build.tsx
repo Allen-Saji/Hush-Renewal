@@ -37,7 +37,7 @@ export function S2Build() {
         </Appear>
 
         <div className="flex flex-col items-center gap-5 pt-24">
-          <Appear at={10.8} from="none">
+          <Appear at={9.5} from="none">
             <div className="flex flex-col items-center gap-2">
               <span className="inline-flex items-center gap-2 rounded-full border border-accent/50 bg-accent-soft px-4 py-2 text-sm font-medium text-ink">
                 <LockKey size={16} weight="bold" className="text-accent" />
@@ -46,7 +46,7 @@ export function S2Build() {
               <MaskBars tone="ink" />
             </div>
           </Appear>
-          <Appear at={13.8} from="none">
+          <Appear at={12.0} from="none">
             <div className="flex flex-col items-center gap-2">
               <div className="flex items-center gap-2 text-faint">
                 <ArrowRight size={20} weight="bold" />

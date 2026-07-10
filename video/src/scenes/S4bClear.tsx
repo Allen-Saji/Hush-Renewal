@@ -48,7 +48,7 @@ function Bound({
 export function S4bClear() {
   const cleared = useAfter(1.0);
   const draw = useBeat(3.4, 2.0);
-  const boundsMasked = useAfter(8.8);
+  const boundsMasked = useAfter(9.9);
 
   const left = 14;
   const right = 86;

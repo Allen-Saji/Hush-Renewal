@@ -7,7 +7,7 @@
     "similarity_boost": 0.8,
     "style": 0.0,
     "use_speaker_boost": true,
-    "speed": 1.06
+    "speed": 1.1
   },
   "scenes": [
     {
@@ -18,12 +18,12 @@
     {
       "id": "s2",
       "label": "build",
-      "text": "HushRenewal turns that standoff into a sealed-bid clearing. Two AI agents each read only their own side's private brief, reason to one reservation price, a ceiling for the buyer, a floor for the vendor, and seal that single number on Canton. Only the neutral matcher sees both."
+      "text": "HushRenewal turns that standoff into a sealed-bid clearing. Two AI agents each read only their own side's private brief, reason to one reservation price, and seal that single number on Canton. Only the neutral matcher sees both."
     },
     {
       "id": "s3",
       "label": "why-canton",
-      "text": "Why Canton? Because privacy here is enforced by signatories, not policy. Each sealed price is a Daml contract that only its owner and the matcher can even see. Clearing draws a random price inside the overlap, never the midpoint, which would leak both numbers. And settlement is atomic: license and cash move together, or not at all."
+      "text": "Why Canton? Because privacy is enforced by signatories, not policy. Each sealed price is a Daml contract only its owner and the matcher can even see. Clearing draws a random price inside the overlap, never the midpoint, which would leak both numbers. Settlement is atomic: license and cash move together, or not at all."
     },
     {
       "id": "s4a",

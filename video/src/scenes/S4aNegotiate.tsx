@@ -12,9 +12,9 @@ import { fixture } from "../lib/fixture";
   sealed state with the real prices and contract ids.
 */
 const REASONING_START = 3.2;
-const REASONING_END = 11.2;
-const DECIDED_AT = 11.6;
-const SEALED_AT = 12.8;
+const REASONING_END = 7.6;
+const DECIDED_AT = 7.9;
+const SEALED_AT = 8.8;
 
 function panel(role: "customer" | "vendor", reasoning: string, phase: Phase) {
   return (

@@ -25,12 +25,12 @@ export function S5Proofs() {
 
       <div className="mt-6 grid flex-1 grid-cols-[640px_1fr] items-center gap-8">
         <div className="flex flex-col gap-5">
-          <Appear at={0.9} from="left">
+          <Appear at={1.6} from="left">
             <div style={{ zoom: 1.04 }}>
               <PeekResultCard peek={fixture.peek} busy={false} />
             </div>
           </Appear>
-          <Appear at={4.8} from="left">
+          <Appear at={5.9} from="left">
             <div style={{ zoom: 1.04 }}>
               <ForceSettleResultCard
                 force={fixture.force}
@@ -41,7 +41,7 @@ export function S5Proofs() {
           </Appear>
         </div>
 
-        <Appear at={9.2} from="right">
+        <Appear at={9.6} from="right">
           <div>
             <BrowserChrome url="hushrenewal.allensaji.dev/demo -- matcher active-contracts query, live">
               <OffthreadVideo

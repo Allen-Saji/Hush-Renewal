@@ -11,7 +11,7 @@ import { customerAccept, fixture, settled } from "../lib/fixture";
 */
 export function S4cSettle() {
   const proposed = useAfter(1.6);
-  const accepted = useAfter(4.0);
+  const accepted = useAfter(4.3);
   const done = useAfter(6.8);
 
   return (

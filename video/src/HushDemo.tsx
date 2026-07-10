@@ -15,18 +15,17 @@ import { S6Close } from "./scenes/S6Close";
   own <Audio>, so the voice starts exactly at the scene's frame 0 -- sync at
   every boundary by construction.
 
-  ESTIMATED until the ElevenLabs key is re-enabled and gen_audio.py runs;
-  then paste the printed SCENE_FRAMES here verbatim.
+  Locked from the generated ElevenLabs audio (gen_audio.py output).
 */
 export const SCENE_FRAMES = {
-  s1: 450,
-  s2: 570,
-  s3: 672,
-  s4a: 522,
-  s4b: 381,
-  s4c: 312,
-  s5: 474,
-  s6: 288,
+  s1: 409,
+  s2: 443,
+  s3: 659,
+  s4a: 457,
+  s4b: 383,
+  s4c: 285,
+  s5: 462,
+  s6: 316,
 } as const;
 
 export const TOTAL_FRAMES = Object.values(SCENE_FRAMES).reduce((a, b) => a + b, 0);

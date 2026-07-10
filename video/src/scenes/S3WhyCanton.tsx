@@ -122,7 +122,7 @@ export function S3WhyCanton() {
             title: "Privacy by signatories, not policy",
             body: <Visibility />,
           },
-          { at: 9.5, title: "Random in-band clearing", body: <RandomBand at={9.5} /> },
+          { at: 10.0, title: "Random in-band clearing", body: <RandomBand at={10.0} /> },
           { at: 16.5, title: "Atomic delivery-versus-payment", body: <AtomicDvP /> },
         ].map((card, i) => (
           <Appear key={card.title} at={card.at} className="h-full">
