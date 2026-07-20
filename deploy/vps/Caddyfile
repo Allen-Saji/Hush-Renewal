@@ -1,0 +1,41 @@
+api.hushrenewal.allensaji.dev {
+	@untrusted_write {
+		method POST PUT PATCH DELETE
+		not header Origin https://hushrenewal.allensaji.dev
+	}
+	respond @untrusted_write 403
+	header {
+		-Server
+		Referrer-Policy no-referrer
+		X-Content-Type-Options nosniff
+	}
+	reverse_proxy 127.0.0.1:8000
+}
+
+customer-agent.hushrenewal.allensaji.dev {
+	@untrusted_write {
+		method POST PUT PATCH DELETE
+		not header Origin https://hushrenewal.allensaji.dev
+	}
+	respond @untrusted_write 403
+	header {
+		-Server
+		Referrer-Policy no-referrer
+		X-Content-Type-Options nosniff
+	}
+	reverse_proxy 127.0.0.1:8100
+}
+
+vendor-agent.hushrenewal.allensaji.dev {
+	@untrusted_write {
+		method POST PUT PATCH DELETE
+		not header Origin https://hushrenewal.allensaji.dev
+	}
+	respond @untrusted_write 403
+	header {
+		-Server
+		Referrer-Policy no-referrer
+		X-Content-Type-Options nosniff
+	}
+	reverse_proxy 127.0.0.1:8200
+}

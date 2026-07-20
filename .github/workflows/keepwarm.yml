@@ -1,18 +1,11 @@
-name: keep-warm
+name: keep-warm (legacy Render)
 
-# Render free web services idle out after ~15 min without inbound traffic, then
-# cold-start (~30-60s) on the next request. A lightweight ping every 10 minutes
-# keeps all three services (backend + both agents) awake so a live demo or the
-# judges never hit a spin-up.
-#
-# After deploying, set three repository variables to the Render URLs
-# (Settings -> Secrets and variables -> Actions -> Variables):
+# Manual health check only. Production moved to persistent systemd services on
+# the HushRenewal VPS deployment, so no keep-warm schedule is needed. The three
+# repository variables point to the current production service URLs:
 #   BACKEND_URL, CUSTOMER_AGENT_URL, VENDOR_AGENT_URL
-# Any that are unset are skipped, so this stays a no-op until you deploy.
 
 on:
-  schedule:
-    - cron: "*/10 * * * *"
   workflow_dispatch:
 
 jobs:

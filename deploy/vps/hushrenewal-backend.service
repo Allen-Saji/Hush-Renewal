@@ -1,0 +1,44 @@
+[Unit]
+Description=HushRenewal matcher backend
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=hushrenewal-backend
+Group=hushrenewal-backend
+WorkingDirectory=/opt/hushrenewal/current/backend
+EnvironmentFile=/etc/hushrenewal/backend.env
+Environment=APP_ENV=prod
+Environment=LOG_JSON=true
+Environment=KEEP_WARM=0
+Environment=CORS_ORIGINS=https://hushrenewal.allensaji.dev
+Environment=DATABASE_URL=sqlite+aiosqlite:////var/lib/hushrenewal/hushrenewal.db
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/opt/hushrenewal/venvs/backend/bin/uvicorn hushrenewal.main:app --host 127.0.0.1 --port 8000
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=30s
+UMask=0077
+
+NoNewPrivileges=true
+PrivateDevices=true
+PrivateTmp=true
+ProtectClock=true
+ProtectControlGroups=true
+ProtectHome=true
+ProtectHostname=true
+ProtectKernelLogs=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/hushrenewal
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+
+[Install]
+WantedBy=multi-user.target

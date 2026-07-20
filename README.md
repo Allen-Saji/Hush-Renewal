@@ -118,13 +118,14 @@ and they appear.
 | Component | What it is | Where it runs |
 |---|---|---|
 | `daml/` | Contract layer: rounds, sealed bids/asks, clearing, settlement handshake, atomic DvP | Canton DevNet (Seaport 5n-sandbox validator) |
-| `backend/` | Matcher service (FastAPI). Party-locked ledger clients over the JSON Ledger API v2, OIDC auto-refresh, random-in-band price draw | Render |
-| `agents/` | Two isolated LLM agent services, one process per role. Reason over a private brief, stream reasoning via SSE, seal through the backend's party endpoints | Render (two services) |
+| `backend/` | Matcher service (FastAPI). Party-locked ledger clients over the JSON Ledger API v2, OIDC auto-refresh, random-in-band price draw | DigitalOcean VPS (systemd + Caddy) |
+| `agents/` | Two isolated LLM agent services, one process per role. Reason over a private brief, stream reasoning via SSE, seal through the backend's party endpoints | DigitalOcean VPS (two systemd services) |
 | `web/` | Control room UI (Next.js). Streams agent reasoning, renders per-party ledger projections, drives the adversarial probes | Vercel |
 
-The two agent services share a codebase but run as separate deployments with
-separate credentials, so context isolation is a deployment fact rather than a
-convention. The matcher stays deterministic; it is not an LLM.
+The two agent services share a codebase and LLM provider credential, but run as
+separate OS users and role-locked processes. Context isolation is therefore a
+deployment fact rather than a convention. The matcher stays deterministic; it
+is not an LLM.
 
 ## Privacy model
 
@@ -162,6 +163,7 @@ agents/     Negotiation agent services (FastAPI, uv), one process per role
 web/        Landing page + control room demo (Next.js)
 docs/       Architecture diagram, logo
 render.yaml Render blueprint: backend + both agent services
+deploy/vps/ Production systemd units, Caddy ingress, and operations guide
 ```
 
 Each service directory has its own README with full detail.
@@ -217,13 +219,15 @@ daml build             # produces the DAR uploaded to the validator
 
 ## Deployment
 
-- `render.yaml` is a Render blueprint for all three Python services. Secrets
-  (`CANTON_DEVNET_*`, `GROQ_API_KEY`, `BACKEND_URL`) are pasted in the
-  dashboard, never committed.
+- The matcher and both agent processes run as dedicated systemd services on a
+  DigitalOcean VPS. Caddy terminates TLS and proxies only to loopback ports.
+  See `deploy/vps/` for the checked-in service definitions and operations guide.
+- Production secrets live in root-owned files under `/etc/hushrenewal`; they
+  are never committed. `render.yaml` remains only as the retired Render
+  blueprint.
 - The web app deploys to Vercel with the three service URLs baked at build
   time.
-- A scheduled GitHub Action pings each service's `/health` every 10 minutes
-  so free-tier instances stay warm.
+- The legacy Render keep-warm workflow has no schedule.
 
 ## Honest limitations
 

@@ -1,0 +1,7 @@
+AGENT_ROLE=vendor
+PORT=8200
+BACKEND_URL=http://127.0.0.1:8000
+APP_ENV=prod
+LOG_JSON=true
+KEEP_WARM=0
+CORS_ORIGINS=https://hushrenewal.allensaji.dev
